@@ -33,9 +33,26 @@ public class Booking {
         this.duration = duration;
     }
 
-    // public String getCustomerName() {
-    //     return customerName;
-    // }
-
-
+    public static Booking createEmpty() {
+        try {
+            Booking booking = Booking.class.getDeclaredConstructor().newInstance();
+            for (var field : Booking.class.getDeclaredFields()) {
+                field.setAccessible(true);
+                if (field.getType().equals(String.class)) {
+                    field.set(booking, "");
+                } else if (field.getType().equals(int.class)) {
+                    field.set(booking, 0);
+                } else if (field.getType().equals(LocalDate.class)) {
+                    field.set(booking, LocalDate.MIN);
+                } else if (field.getType().equals(List.class)) {
+                    field.set(booking, List.of());
+                } else {
+                    field.set(booking, null);
+                }
+            }
+            return booking;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create empty Booking instance", e);
+        }
+    }
 }

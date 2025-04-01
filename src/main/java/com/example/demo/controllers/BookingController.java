@@ -8,6 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -103,4 +105,114 @@ public class BookingController {
             return "error";
         }
     }
+
+    @GetMapping("/booking/{id}")
+    public String editBookingForm(@PathVariable("id") String id, Model model) {
+        try {
+            Booking booking = bookingService.getById(id);
+            if (booking == null) {
+                throw new IllegalArgumentException("Booking not found for ID: " + id);
+            }
+            model.addAttribute("method", "edit");
+            model.addAttribute("booking", booking);
+            model.addAttribute("rooms", roomService.getAll());
+            return "edit-booking";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            return "error";
+        }
+    }
+
+    @PostMapping("/booking/{id}")
+    public String updateBooking(
+            @PathVariable("id") String id,
+            @RequestParam("roomId") String roomId,
+            @RequestParam("customerName") String customerName,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("description") String description,
+            Model model) {
+        try {
+            Booking booking = bookingService.getById(id);
+            if (booking == null) {
+                throw new IllegalArgumentException("Booking not found for ID: " + id);
+            }
+
+            Room room = roomService.getById(roomId);
+            if (room == null) {
+                throw new IllegalArgumentException("Room not found for ID: " + roomId);
+            }
+
+            booking.setRoom(room);
+            booking.setCustomerName(customerName);
+            booking.setStartDate(startDate);
+            booking.setEndDate(endDate);
+            booking.setDescription(description);
+            bookingService.add(booking);
+
+            return "redirect:/bookings";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            return "error";
+        }
+    }
+
+    @GetMapping("/create-booking")
+    public String createBookingForm(
+            @RequestParam("date") String date,
+            @RequestParam("roomId") String roomId,
+            Model model) {
+        try {
+            Room room = roomService.getById(roomId);
+            if (room == null) {
+                throw new IllegalArgumentException("Room not found for ID: " + roomId);
+            }
+
+            Booking booking = Booking.createEmpty();
+
+            booking.setRoom(room);
+            booking.setStartDate(date);
+            booking.setEndDate(date);
+
+            model.addAttribute("method", "create");
+            model.addAttribute("booking", booking);
+            model.addAttribute("rooms", roomService.getAll());
+            return "edit-booking";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            return "error";
+        }
+    }
+
+    @PostMapping("/create-booking")
+    public String createBooking(
+            @RequestParam("date"
+            ) String date,
+            @RequestParam("roomId") String roomId,
+            @RequestParam("customerName") String customerName,
+            @RequestParam("description") String description,
+            Model model) {
+        try {
+            Room room = roomService.getById(roomId);
+            if (room == null) {
+                throw new IllegalArgumentException("Room not found for ID: " + roomId);
+            }
+
+            Booking booking = new Booking();
+            booking.setStartDate(date);
+            booking.setEndDate(date); // Assuming single-day booking for simplicity
+            booking.setCustomerName(customerName);
+            booking.setDescription(description);
+            booking.setRoom(room);
+            booking.setStatus("booked");
+            bookingService.add(booking);
+
+            return "redirect:/booking/" + booking.getID();
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            return "error";
+        }
+    }
+
+
 }

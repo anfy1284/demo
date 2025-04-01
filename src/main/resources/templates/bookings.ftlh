@@ -64,13 +64,15 @@
                                 <#assign booking = bookingsMap[date][room.ID]>
                                     <#if booking.startDate == date>
                                         <td rowspan="${booking.duration}">
-                                            ${booking.description}
+                                            <a href="/booking/${booking.ID}">${booking.description}</a>
                                         </td>
                                     <#else>
-                                        
+                                        <!-- Skip rendering -->
                                     </#if>
                             <#else>
-                                <td>Available</td>
+                                <td>
+                                    <a href="/create-booking?date=${date}&roomId=${room.ID}" style="text-decoration: none; color: blue;">Available</a>
+                                </td>
                             </#if>
                         <#else>
                             <td>N/A</td>
