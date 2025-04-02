@@ -8,7 +8,7 @@
     <#if method == "edit">
         <form action="/booking/${booking.ID}" method="post">
     <#elseif method == "create">
-        <form action="/create-booking" method="post">
+        <form action="/booking/new" method="post">
     </#if>
 
         <label for="roomId">Room:</label>

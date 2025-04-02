@@ -31,7 +31,7 @@ public class BookingController {
         this.bookingService = bookingService;
     }
 
-    @GetMapping({"/bookings/{year}/{month}", "/bookings"})
+    @GetMapping({"/bookings/{year}/{month}", "/bookings", "/bookings/"})
     public String getBookings(
             @PathVariable(value = "year", required = false) String year,
             @PathVariable(value = "month", required = false) String month,
@@ -133,7 +133,15 @@ public class BookingController {
             @RequestParam("description") String description,
             Model model) {
         try {
-            Booking booking = bookingService.getById(id);
+
+            Booking booking;
+
+            if ("new".equals(id)) {
+                booking = new Booking();
+            } else {
+                booking = bookingService.getById(id);
+            }
+            
             if (booking == null) {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
