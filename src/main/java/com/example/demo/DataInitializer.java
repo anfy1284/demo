@@ -2,13 +2,18 @@ package com.example.demo;
 
 import com.example.demo.services.RoomService;
 import com.example.demo.services.BookingService;
+import com.example.demo.services.GuestService;
 import com.example.demo.classes.Room;
 import com.example.demo.classes.Booking;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.example.demo.classes.Guest;
+import com.example.demo.classes.RoomPricing;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
+
+import java.time.LocalDate;
+import java.util.List;
 
 @Component
 @Order(1) // Указываем, что этот компонент должен быть выполнен первым
@@ -16,11 +21,12 @@ public class DataInitializer {
 
     private final RoomService roomService;
     private final BookingService bookingService;
+    private final GuestService guestService;
 
-    @Autowired
-    public DataInitializer(RoomService roomService, BookingService bookingService) {
+    public DataInitializer(RoomService roomService, BookingService bookingService, GuestService guestService) {
         this.roomService = roomService;
         this.bookingService = bookingService;
+        this.guestService = guestService;
     }
 
     @EventListener(ContextRefreshedEvent.class)
@@ -45,6 +51,47 @@ public class DataInitializer {
         room4.setName("Room 4");
         roomService.add(room4);
 
+        // Add test guests
+        Guest guest1 = new Guest();
+        guest1.setName("John Doe");
+        guest1.setDateOfBirth("1985-05-15");
+        guest1.setEmail("johndoe@example.com");
+        guest1.setPhoneNumber("123-456-7890");
+        guest1.setAddress("123 Main St, Springfield");
+        guestService.add(guest1);
+
+        Guest guest2 = new Guest();
+        guest2.setName("Jane Smith");
+        guest2.setDateOfBirth("1990-08-22");
+        guest2.setEmail("janesmith@example.com");
+        guest2.setPhoneNumber("987-654-3210");
+        guest2.setAddress("456 Elm St, Springfield");
+        guestService.add(guest2);
+
+        Guest guest3 = new Guest();
+        guest3.setName("Alice Johnson");
+        guest3.setDateOfBirth("1975-12-05");
+        guest3.setEmail("alicejohnson@example.com");
+        guest3.setPhoneNumber("555-123-4567");
+        guest3.setAddress("789 Oak St, Springfield");
+        guestService.add(guest3);
+
+        Guest guest4 = new Guest();
+        guest4.setName("Bob Brown");
+        guest4.setDateOfBirth("1980-03-10");
+        guest4.setEmail("bobbrown@example.com");
+        guest4.setPhoneNumber("444-987-6543");
+        guest4.setAddress("321 Pine St, Springfield");
+        guestService.add(guest4);
+
+        Guest guest5 = new Guest();
+        guest5.setName("Charlie Green");
+        guest5.setDateOfBirth("2000-07-25");
+        guest5.setEmail("charliegreen@example.com");
+        guest5.setPhoneNumber("333-222-1111");
+        guest5.setAddress("654 Maple St, Springfield");
+        guestService.add(guest5);
+
         // Создание бронирований
         Booking booking1 = new Booking();
         booking1.setStartDate("2025-03-05");
@@ -53,6 +100,7 @@ public class DataInitializer {
         booking1.setCustomerName("John Doe"); // Set customer name
         booking1.setStatus("booked"); // Set status
         booking1.setRoom(roomService.findByName("Room 1"));
+        booking1.setGuests(List.of(guest1, guest2)); // Add guests
         bookingService.add(booking1);
 
         Booking booking2 = new Booking();
@@ -62,115 +110,148 @@ public class DataInitializer {
         booking2.setCustomerName("Jane Smith"); // Set customer name
         booking2.setStatus("booked"); // Set status
         booking2.setRoom(roomService.findByName("Room 2"));
+        booking2.setGuests(List.of(guest3)); // Add guests
         bookingService.add(booking2);
 
         Booking booking3 = new Booking();
         booking3.setStartDate("2025-03-20");
         booking3.setEndDate("2025-03-21");
         booking3.setDescription("Booking for March 20-21, 2025");
-        booking3.setRoom(roomService.findByName("Room 1"));
+        booking3.setCustomerName("Bob Brown");
         booking3.setStatus("booked"); // Set status
+        booking3.setRoom(roomService.findByName("Room 1"));
+        booking3.setGuests(List.of(guest4, guest5)); // Add guests
         bookingService.add(booking3);
 
         Booking booking4 = new Booking();
         booking4.setStartDate("2025-03-25");
         booking4.setEndDate("2025-03-26");
         booking4.setDescription("Booking for March 25-26, 2025");
-        booking4.setRoom(roomService.findByName("Room 2"));
+        booking4.setCustomerName("Alice Johnson");
         booking4.setStatus("booked"); // Set status
+        booking4.setRoom(roomService.findByName("Room 2"));
+        booking4.setGuests(List.of(guest1)); // Add guests
         bookingService.add(booking4);
 
         Booking booking5 = new Booking();
         booking5.setStartDate("2025-03-30");
         booking5.setEndDate("2025-03-31");
         booking5.setDescription("Booking for March 30-31, 2025");
-        booking5.setRoom(roomService.findByName("Room 1"));
+        booking5.setCustomerName("Charlie Green");
         booking5.setStatus("booked"); // Set status
+        booking5.setRoom(roomService.findByName("Room 1"));
+        booking5.setGuests(List.of(guest2, guest3)); // Add guests
         bookingService.add(booking5);
 
-        // Test bookings for Room 3 in March and April
-        Booking room3MarchBooking = new Booking();
-        room3MarchBooking.setStartDate("2025-03-10");
-        room3MarchBooking.setEndDate("2025-03-12");
-        room3MarchBooking.setDescription("Booking for Room 3, March 10-12, 2025");
-        room3MarchBooking.setCustomerName("Frank Miller");
-        room3MarchBooking.setStatus("booked");
-        room3MarchBooking.setRoom(roomService.findByName("Room 3"));
-        bookingService.add(room3MarchBooking);
+        // Additional test bookings for April
+        Booking aprilBooking6 = new Booking();
+        aprilBooking6.setStartDate("2025-04-03");
+        aprilBooking6.setEndDate("2025-04-04");
+        aprilBooking6.setDescription("Booking for April 3-4, 2025");
+        aprilBooking6.setCustomerName("Eve Adams");
+        aprilBooking6.setStatus("booked");
+        aprilBooking6.setRoom(roomService.findByName("Room 3"));
+        aprilBooking6.setGuests(List.of(guest1, guest4)); // Add guests
+        bookingService.add(aprilBooking6);
 
-        Booking room3AprilBooking = new Booking();
-        room3AprilBooking.setStartDate("2025-04-07");
-        room3AprilBooking.setEndDate("2025-04-09");
-        room3AprilBooking.setDescription("Booking for Room 3, April 7-9, 2025");
-        room3AprilBooking.setCustomerName("Grace Hopper");
-        room3AprilBooking.setStatus("booked");
-        room3AprilBooking.setRoom(roomService.findByName("Room 3"));
-        bookingService.add(room3AprilBooking);
+        Booking aprilBooking7 = new Booking();
+        aprilBooking7.setStartDate("2025-04-11");
+        aprilBooking7.setEndDate("2025-04-13");
+        aprilBooking7.setDescription("Booking for April 11-13, 2025");
+        aprilBooking7.setCustomerName("Frank Miller");
+        aprilBooking7.setStatus("booked");
+        aprilBooking7.setRoom(roomService.findByName("Room 4"));
+        aprilBooking7.setGuests(List.of(guest2, guest5)); // Add guests
+        bookingService.add(aprilBooking7);
 
-        // Test bookings for Room 4 in March and April
-        Booking room4MarchBooking = new Booking();
-        room4MarchBooking.setStartDate("2025-03-18");
-        room4MarchBooking.setEndDate("2025-03-20");
-        room4MarchBooking.setDescription("Booking for Room 4, March 18-20, 2025");
-        room4MarchBooking.setCustomerName("Henry Ford");
-        room4MarchBooking.setStatus("booked");
-        room4MarchBooking.setRoom(roomService.findByName("Room 4"));
-        bookingService.add(room4MarchBooking);
+        Booking aprilBooking8 = new Booking();
+        aprilBooking8.setStartDate("2025-04-17");
+        aprilBooking8.setEndDate("2025-04-19");
+        aprilBooking8.setDescription("Booking for April 17-19, 2025");
+        aprilBooking8.setCustomerName("Grace Hopper");
+        aprilBooking8.setStatus("booked");
+        aprilBooking8.setRoom(roomService.findByName("Room 1"));
+        aprilBooking8.setGuests(List.of(guest3)); // Add guests
+        bookingService.add(aprilBooking8);
 
-        Booking room4AprilBooking = new Booking();
-        room4AprilBooking.setStartDate("2025-04-15");
-        room4AprilBooking.setEndDate("2025-04-18");
-        room4AprilBooking.setDescription("Booking for Room 4, April 15-18, 2025");
-        room4AprilBooking.setCustomerName("Isabella Swan");
-        room4AprilBooking.setStatus("booked");
-        room4AprilBooking.setRoom(roomService.findByName("Room 4"));
-        bookingService.add(room4AprilBooking);
+        Booking aprilBooking9 = new Booking();
+        aprilBooking9.setStartDate("2025-04-22");
+        aprilBooking9.setEndDate("2025-04-23");
+        aprilBooking9.setDescription("Booking for April 22-23, 2025");
+        aprilBooking9.setCustomerName("Henry Ford");
+        aprilBooking9.setStatus("booked");
+        aprilBooking9.setRoom(roomService.findByName("Room 2"));
+        aprilBooking9.setGuests(List.of(guest4, guest5)); // Add guests
+        bookingService.add(aprilBooking9);
 
-        // Test bookings for April
-        Booking aprilBooking1 = new Booking();
-        aprilBooking1.setStartDate("2025-04-01");
-        aprilBooking1.setEndDate("2025-04-02");
-        aprilBooking1.setDescription("Booking for April 1-2, 2025");
-        aprilBooking1.setCustomerName("Alice Johnson");
-        aprilBooking1.setStatus("booked");
-        aprilBooking1.setRoom(roomService.findByName("Room 1"));
-        bookingService.add(aprilBooking1);
+        Booking aprilBooking10 = new Booking();
+        aprilBooking10.setStartDate("2025-04-25");
+        aprilBooking10.setEndDate("2025-04-27");
+        aprilBooking10.setDescription("Booking for April 25-27, 2025");
+        aprilBooking10.setCustomerName("Isabella Swan");
+        aprilBooking10.setStatus("booked");
+        aprilBooking10.setRoom(roomService.findByName("Room 3"));
+        aprilBooking10.setGuests(List.of(guest1, guest2, guest3)); // Add guests
+        bookingService.add(aprilBooking10);
 
-        Booking aprilBooking2 = new Booking();
-        aprilBooking2.setStartDate("2025-04-05");
-        aprilBooking2.setEndDate("2025-04-10"); // 6 days
-        aprilBooking2.setDescription("Booking for April 5-10, 2025");
-        aprilBooking2.setCustomerName("Bob Smith");
-        aprilBooking2.setStatus("booked");
-        aprilBooking2.setRoom(roomService.findByName("Room 2"));
-        bookingService.add(aprilBooking2);
+        // Добавление новых цен для всех комнат
+        RoomPricing room1Pricing = new RoomPricing("Room 1");
+        RoomPricing room2Pricing = new RoomPricing("Room 2");
+        RoomPricing room3Pricing = new RoomPricing("Room 3");
+        RoomPricing room4Pricing = new RoomPricing("Room 4");
 
-        Booking aprilBooking3 = new Booking();
-        aprilBooking3.setStartDate("2025-04-15");
-        aprilBooking3.setEndDate("2025-04-16");
-        aprilBooking3.setDescription("Booking for April 15-16, 2025");
-        aprilBooking3.setCustomerName("Charlie Brown");
-        aprilBooking3.setStatus("booked");
-        aprilBooking3.setRoom(roomService.findByName("Room 1"));
-        bookingService.add(aprilBooking3);
+        // Периоды
+        List<LocalDate[]> periods = List.of(
+            new LocalDate[]{LocalDate.of(2024, 10, 6), LocalDate.of(2024, 12, 13)},
+            new LocalDate[]{LocalDate.of(2024, 12, 13), LocalDate.of(2025, 3, 9)},
+            new LocalDate[]{LocalDate.of(2025, 3, 9), LocalDate.of(2025, 5, 25)},
+            new LocalDate[]{LocalDate.of(2025, 11, 9), LocalDate.of(2025, 12, 14)},
+            new LocalDate[]{LocalDate.of(2026, 3, 8), LocalDate.of(2026, 5, 22)},
+            new LocalDate[]{LocalDate.of(2026, 11, 8), LocalDate.of(2026, 12, 13)},
+            new LocalDate[]{LocalDate.of(2027, 3, 7), LocalDate.of(2027, 5, 14)}
+        );
 
-        Booking aprilBooking4 = new Booking();
-        aprilBooking4.setStartDate("2025-04-20");
-        aprilBooking4.setEndDate("2025-04-24"); // 5 days
-        aprilBooking4.setDescription("Booking for April 20-24, 2025");
-        aprilBooking4.setCustomerName("Diana Prince");
-        aprilBooking4.setStatus("booked");
-        aprilBooking4.setRoom(roomService.findByName("Room 2"));
-        bookingService.add(aprilBooking4);
+        // Цены для комнаты 1
+        for (LocalDate[] period : periods) {
+            room1Pricing.addPrice(period[0], period[1], 1, 74.00);
+            room1Pricing.addPrice(period[0], period[1], 2, 86.00);
+            room1Pricing.addPrice(period[0], period[1], 3, 109.50);
+            room1Pricing.addPrice(period[0], period[1], 4, 134.00);
+            room1Pricing.addPrice(period[0], period[1], 5, 157.50);
+        }
 
-        Booking aprilBooking5 = new Booking();
-        aprilBooking5.setStartDate("2025-04-28");
-        aprilBooking5.setEndDate("2025-04-30");
-        aprilBooking5.setDescription("Booking for April 28-30, 2025");
-        aprilBooking5.setCustomerName("Eve Adams");
-        aprilBooking5.setStatus("booked");
-        aprilBooking5.setRoom(roomService.findByName("Room 1"));
-        bookingService.add(aprilBooking5);
+        // Цены для комнаты 2
+        for (LocalDate[] period : periods) {
+            room2Pricing.addPrice(period[0], period[1], 1, 84.00);
+            room2Pricing.addPrice(period[0], period[1], 2, 97.00);
+            room2Pricing.addPrice(period[0], period[1], 3, 114.00);
+            room2Pricing.addPrice(period[0], period[1], 4, 139.00);
+            room2Pricing.addPrice(period[0], period[1], 5, 162.50);
+            room2Pricing.addPrice(period[0], period[1], 6, 186.00);
+            room2Pricing.addPrice(period[0], period[1], 7, 210.00);
+            room2Pricing.addPrice(period[0], period[1], 8, 234.00);
+        }
+
+        // Цены для комнаты 3
+        for (LocalDate[] period : periods) {
+            room3Pricing.addPrice(period[0], period[1], 1, 56.00);
+            room3Pricing.addPrice(period[0], period[1], 2, 69.00);
+            room3Pricing.addPrice(period[0], period[1], 3, 88.50);
+            room3Pricing.addPrice(period[0], period[1], 4, 106.00);
+        }
+
+        // Цены для комнаты 4
+        for (LocalDate[] period : periods) {
+            room4Pricing.addPrice(period[0], period[1], 1, 56.00);
+            room4Pricing.addPrice(period[0], period[1], 2, 69.00);
+            room4Pricing.addPrice(period[0], period[1], 3, 88.50);
+        }
+
+        // Вывод информации о новых ценах для проверки
+        System.out.println("Updated Room 1 Pricing: " + room1Pricing.getPricing());
+        System.out.println("Updated Room 2 Pricing: " + room2Pricing.getPricing());
+        System.out.println("Updated Room 3 Pricing: " + room3Pricing.getPricing());
+        System.out.println("Updated Room 4 Pricing: " + room4Pricing.getPricing());
 
         System.out.println("Data initialization completed.");
     }

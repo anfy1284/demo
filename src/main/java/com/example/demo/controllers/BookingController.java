@@ -3,6 +3,7 @@ package com.example.demo.controllers;
 import com.example.demo.classes.Room;
 import com.example.demo.services.BookingService;
 import com.example.demo.services.RoomService;
+import com.example.demo.services.GuestService;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,18 +19,22 @@ import java.util.stream.Collectors;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import com.example.demo.classes.Booking; // Ensure Booking is imported
+import com.example.demo.classes.Booking;
+import com.example.demo.classes.Guest;
+import java.util.ArrayList;
 
 @Controller
-@DependsOn("dataInitializer") // Указываем зависимость от DataInitializer
+@DependsOn("dataInitializer")
 public class BookingController {
 
     private final RoomService roomService;
     private final BookingService bookingService;
+    private final GuestService guestService;
 
-    public BookingController(RoomService roomService, BookingService bookingService) {
+    public BookingController(RoomService roomService, BookingService bookingService, GuestService guestService) {
         this.roomService = roomService;
         this.bookingService = bookingService;
+        this.guestService = guestService;
     }
 
     @GetMapping({"/bookings/{year}/{month}", "/bookings", "/bookings/"})
@@ -131,33 +137,53 @@ public class BookingController {
             @RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate,
             @RequestParam("description") String description,
+            @RequestParam Map<String, String> allParams,
             Model model) {
         try {
-
-            Booking booking;
-
-            if ("new".equals(id)) {
-                booking = new Booking();
-            } else {
-                booking = bookingService.getById(id);
-            }
-            
+            // Retrieve or create a new booking
+            Booking booking = "new".equals(id) ? new Booking() : bookingService.getById(id);
             if (booking == null) {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
 
+            // Retrieve the room
             Room room = roomService.getById(roomId);
             if (room == null) {
                 throw new IllegalArgumentException("Room not found for ID: " + roomId);
             }
 
+            // Update booking details
             booking.setRoom(room);
             booking.setCustomerName(customerName);
             booking.setStartDate(startDate);
             booking.setEndDate(endDate);
             booking.setDescription(description);
-            bookingService.add(booking);
 
+            // Process guests
+            List<Guest> guests = new ArrayList<>();
+            allParams.keySet().stream()
+                .filter(key -> key.startsWith("guests[") && key.endsWith("].name"))
+                .forEach(key -> {
+                    String index = key.substring(7, key.indexOf("].name")); // Extract index from key
+                    String guestName = allParams.get("guests[" + index + "].name");
+                    String guestDob = allParams.get("guests[" + index + "].dateOfBirth");
+
+                    if (guestName != null && guestDob != null) {
+                        List<Guest> guestsFound = guestService.findByNameAndDateOfBirth(guestName, guestDob);
+                        Guest guest = guestsFound.isEmpty() ? null : guestsFound.get(0);
+                        if (guest == null) {
+                            guest = new Guest();
+                            guest.setName(guestName);
+                            guest.setDateOfBirth(guestDob);
+                            guestService.add(guest);
+                        }
+                        guests.add(guest);
+                    }
+                });
+            booking.setGuests(guests);
+
+            // Save the booking
+            bookingService.add(booking);
             return "redirect:/bookings";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
@@ -185,6 +211,7 @@ public class BookingController {
             model.addAttribute("method", "create");
             model.addAttribute("booking", booking);
             model.addAttribute("rooms", roomService.getAll());
+            //model.addAttribute("query", "");
             return "edit-booking";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
@@ -194,8 +221,7 @@ public class BookingController {
 
     @PostMapping("/create-booking")
     public String createBooking(
-            @RequestParam("date"
-            ) String date,
+            @RequestParam("date") String date,
             @RequestParam("roomId") String roomId,
             @RequestParam("customerName") String customerName,
             @RequestParam("description") String description,
@@ -222,5 +248,9 @@ public class BookingController {
         }
     }
 
-
+    @GetMapping("/guests/search")
+    @ResponseBody
+    public List<Guest> searchGuests(@RequestParam("query") String query) {
+        return guestService.findByName(query);
+    }
 }

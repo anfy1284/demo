@@ -11,7 +11,7 @@ public class Booking {
     private Room room;
     private String customerName;
     private String startDate;
-    private String endDate;
+    private String endDate; 
     private String status; // "booked", "checked-in", "checked-out", "cancelled"
     private String paymentStatus; // "paid", "pending", "refunded"
     private String paymentMethod; // "credit card", "cash", "bank transfer"
