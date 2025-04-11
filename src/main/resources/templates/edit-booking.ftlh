@@ -105,6 +105,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Edit Booking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         body {
@@ -126,9 +127,11 @@
             overflow: hidden;
             display: flex;
             flex-direction: row;
+            flex-wrap: wrap;
         }
         .form-container, .bill-container {
             padding: 20px;
+            box-sizing: border-box;
         }
         .form-container {
             flex: 2;
@@ -169,6 +172,7 @@
             cursor: pointer;
             font-size: 14px;
             display: flex;
+            justify-content: center; /* Центрирование текста */
             align-items: center;
             gap: 5px;
         }
@@ -211,6 +215,12 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+        }
+        .form-footer button, .form-footer a {
+            flex: 1;
+            text-align: center;
         }
         .form-footer a {
             color: #007bff;
@@ -259,6 +269,24 @@
         }
         .print-bill-btn .material-icons {
             font-size: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .form-container {
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+            }
+            .bill-container {
+                padding-top: 10px;
+            }
+            .form-footer {
+                flex-direction: row; /* Кнопки в ряд на мобильных устройствах */
+                gap: 10px;
+            }
         }
     </style>
 </head>

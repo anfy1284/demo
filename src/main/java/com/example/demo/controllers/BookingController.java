@@ -64,10 +64,15 @@ public class BookingController {
             LocalDate startDate = LocalDate.of(Integer.parseInt(year), Integer.parseInt(month), 1);
             LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
-            // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM E", java.util.Locale.ENGLISH);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd", java.util.Locale.ENGLISH);
+            DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", java.util.Locale.ENGLISH);
+
             List<String> formattedDatesOfMonth = startDate.datesUntil(endDate.plusDays(1))
                     .map(date -> date.format(formatter))
+                    .collect(Collectors.toList());
+
+            List<String> displayDatesOfMonth = startDate.datesUntil(endDate.plusDays(1))
+                    .map(date -> date.format(displayFormatter))
                     .collect(Collectors.toList());
 
             // Подготовка данных для отображения бронирований
@@ -96,6 +101,7 @@ public class BookingController {
             model.addAttribute("month", month);
             model.addAttribute("year", year);
             model.addAttribute("datesOfMonth", formattedDatesOfMonth);
+            model.addAttribute("displayDatesOfMonth", displayDatesOfMonth);
             model.addAttribute("bookingsMap", bookingsMap);
 
             LocalDate previousMonth = startDate.minusMonths(1);
