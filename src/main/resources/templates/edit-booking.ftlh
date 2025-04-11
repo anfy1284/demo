@@ -79,6 +79,25 @@
         }
     }
 
+    function validateForm() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const guestNames = Array.from(document.querySelectorAll('input[name^="guests["][name$="].name"]')).map(input => input.value);
+
+        if (new Date(startDate) > new Date(endDate)) {
+            alert("Start date cannot be later than end date.");
+            return false;
+        }
+
+        const duplicateGuests = guestNames.filter((name, index, self) => self.indexOf(name) !== index);
+        if (duplicateGuests.length > 0) {
+            alert("Duplicate guests are not allowed: " + duplicateGuests.join(", "));
+            return false;
+        }
+
+        return true;
+    }
+
     document.addEventListener('DOMContentLoaded', calculateBill); // Пересчет прайса при открытии страницы
 </script>
 
@@ -221,6 +240,26 @@
             flex-direction: column;
             gap: 10px;
         }
+        .print-bill-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .print-bill-btn:hover {
+            background-color: #0056b3;
+        }
+        .print-bill-btn .material-icons {
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
@@ -228,9 +267,9 @@
         <div class="form-container">
             <h1>Edit Booking</h1>
             <#if method == "edit">
-                <form action="/booking/${booking.ID}" method="post">
+                <form action="/booking/${booking.ID}" method="post" onsubmit="return validateForm()">
             <#elseif method == "create">
-                <form action="/booking/new" method="post">
+                <form action="/booking/new" method="post" onsubmit="return validateForm()">
             </#if>
                 <label for="roomId">Room:</label>
                 <select id="roomId" name="roomId" required>
@@ -247,13 +286,13 @@
                 <input type="text" id="customerName" name="customerName" value="${booking.customerName}" required>
 
                 <label for="startDate">Start Date:</label>
-                <input type="date" id="startDate" name="startDate" value="${booking.startDate}" required>
+                <input type="date" id="startDate" name="startDate" value="${booking.startDate}" onchange="calculateBill()" required>
 
                 <label for="endDate">End Date:</label>
-                <input type="date" id="endDate" name="endDate" value="${booking.endDate}" required>
+                <input type="date" id="endDate" name="endDate" value="${booking.endDate}" onchange="calculateBill()" required>
 
                 <label for="description">Description:</label>
-                <textarea id="description" name="description" required>${booking.description}</textarea>
+                <textarea id="description" name="description">${booking.description}</textarea>
 
                 <h2>Guests</h2>
                 <div class="guest-section">
@@ -309,6 +348,11 @@
                     <td><strong>0 €</strong></td>
                 </tr>
             </table>
+            <#if method == "edit">
+                <button class="print-bill-btn" onclick="window.location.href='/booking/${booking.ID}/bill'">
+                    <span class="material-icons">print</span> Print Bill
+                </button>
+            </#if>
         </div>
     </div>
 </body>

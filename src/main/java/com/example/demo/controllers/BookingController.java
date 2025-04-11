@@ -22,6 +22,8 @@ import java.util.Map;
 import com.example.demo.classes.Booking;
 import com.example.demo.classes.Guest;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
 import com.example.demo.classes.RoomPricing; // Ensure this is the correct package for RoomPricing
 import com.example.demo.services.RoomPricingService; // Ensure this is the correct package for RoomPricingService
 
@@ -140,10 +142,29 @@ public class BookingController {
             @RequestParam("customerName") String customerName,
             @RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate,
-            @RequestParam("description") String description,
+            @RequestParam(value = "description", required = false) String description,
             @RequestParam Map<String, String> allParams,
             Model model) {
         try {
+            // Проверка дат
+            LocalDate start = LocalDate.parse(startDate);
+            LocalDate end = LocalDate.parse(endDate);
+            if (start.isAfter(end)) {
+                throw new IllegalArgumentException("Start date cannot be later than end date.");
+            }
+
+            // Проверка на дублирующихся гостей
+            List<String> guestNames = allParams.keySet().stream()
+                .filter(key -> key.startsWith("guests[") && key.endsWith("].name"))
+                .map(allParams::get)
+                .collect(Collectors.toList());
+            Set<String> duplicateGuests = guestNames.stream()
+                .filter(name -> Collections.frequency(guestNames, name) > 1)
+                .collect(Collectors.toSet());
+            if (!duplicateGuests.isEmpty()) {
+                throw new IllegalArgumentException("Duplicate guests are not allowed: " + String.join(", ", duplicateGuests));
+            }
+
             // Retrieve or create a new booking
             Booking booking = "new".equals(id) ? new Booking() : bookingService.getById(id);
             if (booking == null) {
@@ -289,5 +310,43 @@ public class BookingController {
             billData.put("error", e.getMessage());
         }
         return billData;
+    }
+
+    @GetMapping("/booking/{id}/bill")
+    public String viewBill(@PathVariable("id") String id, Model model) {
+        try {
+            Booking booking = bookingService.getById(id);
+            if (booking == null) {
+                throw new IllegalArgumentException("Booking not found for ID: " + id);
+            }
+
+            RoomPricing roomPricing = roomPricingService.getRoomPricing(booking.getRoom().getID());
+            if (roomPricing == null) {
+                throw new IllegalArgumentException("Pricing not found for room ID: " + booking.getRoom().getID());
+            }
+
+            LocalDate start = LocalDate.parse(booking.getStartDate());
+            LocalDate end = LocalDate.parse(booking.getEndDate());
+            long days = start.datesUntil(end.plusDays(1)).count();
+
+            Double dailyPrice = roomPricing.getPrice(start, booking.getGuests().size());
+            if (dailyPrice == null) {
+                throw new IllegalArgumentException("No pricing available for the given date and guest count.");
+            }
+
+            double totalPrice = dailyPrice * days;
+
+            Map<String, Object> bill = new HashMap<>();
+            bill.put("accommodationPrice", String.format("%.2f", dailyPrice));
+            bill.put("totalPrice", String.format("%.2f", totalPrice));
+
+            model.addAttribute("booking", booking);
+            model.addAttribute("bill", bill);
+
+            return "bill";
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            return "error";
+        }
     }
 }
