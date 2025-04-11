@@ -31,18 +31,26 @@ public class RoomPricing {
 
     // Добавить цену для определённого периода и количества гостей
     public void addPrice(LocalDate startDate, LocalDate endDate, int numberOfGuests, double price) {
+        if (startDate == null || endDate == null || numberOfGuests <= 0 || price <= 0) {
+            throw new IllegalArgumentException("Invalid input for adding price");
+        }
         Period period = new Period(startDate, endDate);
         pricing.putIfAbsent(period, new HashMap<>());
         pricing.get(period).put(numberOfGuests, price);
+        System.out.println("Added price: " + price + " for period: " + period + " and guests: " + numberOfGuests);
     }
 
     // Получить цену для определённого периода и количества гостей
     public Double getPrice(LocalDate date, int numberOfGuests) {
+        if (pricing.isEmpty()) {
+            System.out.println("Pricing is empty!");
+        }
         for (Period period : pricing.keySet()) {
             if (period.includes(date)) {
                 return pricing.get(period).getOrDefault(numberOfGuests, null);
             }
         }
+        System.out.println("No price found for date: " + date + " and guests: " + numberOfGuests);
         return null; // Цена не найдена
     }
 

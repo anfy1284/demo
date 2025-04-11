@@ -1,5 +1,4 @@
 <script>
-
     async function searchGuests(input, index) {
         const query = input.value;
         if (query.length > 1) {
@@ -15,7 +14,6 @@
             });
         }
     }
-    
 
     function addGuestRow() {
         const table = document.getElementById('guestsTable');
@@ -24,7 +22,7 @@
 
         row.innerHTML = `
             <td>
-                <input type="text" name="guests[` + rowCount + `].name" oninput="searchGuests(this, rowCount)" list="guestSuggestions-rowCount" required>
+                <input type="text" name="guests[` + rowCount + `].name" oninput="searchGuests(this, ` + rowCount + `)" list="guestSuggestions-` + rowCount + `" required>
                 <datalist id="guestSuggestions-` + rowCount + `"></datalist>
             </td>
             <td>
@@ -34,13 +32,41 @@
                 <button type="button" onclick="removeGuestRow(this)">Remove</button>
             </td>
         `;
+        calculateBill(); // Recalculate bill when a guest is added
     }
 
     function removeGuestRow(button) {
         const row = button.parentElement.parentElement;
         row.parentElement.removeChild(row);
+        calculateBill(); // Recalculate bill when a guest is removed
     }
 
+    async function calculateBill() {
+        const startDate = document.getElementById('startDate').value;
+        const endDate = document.getElementById('endDate').value;
+        const roomId = document.getElementById('roomId').value;
+        const guestCount = document.querySelectorAll('#guestsTable tbody tr').length;
+
+        if (startDate && endDate && roomId) {
+            const response = await fetch(`/calculate-bill?roomId=` + roomId + `&startDate=` + startDate + `&endDate=` + endDate + `&guestCount=` + guestCount);
+            const billData = await response.json();
+
+            const billTable = document.getElementById('billTable');
+            billTable.innerHTML = `
+                <tr>
+                    <td>Accommodation price (` + guestCount + ` guests)</td>
+                    <td>` + billData.accommodationPrice + ` €</td>
+                </tr>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>` + billData.totalPrice + ` €</strong></td>
+                </tr>
+            `;
+            
+        }
+    }
+
+    document.addEventListener('input', calculateBill); // Recalculate bill on any input change
 </script>
 
 <!DOCTYPE html>
@@ -133,72 +159,122 @@
         .form-footer a:hover {
             text-decoration: underline;
         }
+        .container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .form-container {
+            flex: 0 0 65%;
+        }
+        .bill-container {
+            flex: 0 0 30%;
+            background: #f9f9f9;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .bill-container h2 {
+            margin-top: 0;
+        }
+        .bill-container table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .bill-container table th, .bill-container table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .bill-container table th {
+            background-color: #f4f4f4;
+        }
+        .bill-container table td {
+            text-align: right;
+        }
     </style>
 </head>
 <body>
     <h1>Edit Booking</h1>
-    <#if method == "edit">
-        <form action="/booking/${booking.ID}" method="post">
-    <#elseif method == "create">
-        <form action="/booking/new" method="post">
-    </#if>
-        <label for="roomId">Room:</label>
-        <select id="roomId" name="roomId" required>
-            <#list rooms as room>
-                <#if booking.room??>
-                    <option value="${room.ID}" <#if room.ID == booking.room.ID>selected</#if>>${room.name}</option>
-                <#else>
-                    <option value="${room.ID}">${room.name}</option>
-                </#if>
-            </#list>
-        </select>
-
-        <label for="customerName">Customer Name:</label>
-        <input type="text" id="customerName" name="customerName" value="${booking.customerName}" required>
-
-        <label for="startDate">Start Date:</label>
-        <input type="date" id="startDate" name="startDate" value="${booking.startDate}" required>
-
-        <label for="endDate">End Date:</label>
-        <input type="date" id="endDate" name="endDate" value="${booking.endDate}" required>
-
-        <label for="description">Description:</label>
-        <textarea id="description" name="description" required>${booking.description}</textarea>
-
-        <h2>Guests</h2>
-        <table id="guestsTable">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Date of Birth</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                <#if booking.guests??>
-                    <#list booking.guests as guest>
-                        <tr>
-                            <td>
-                                <input type="text" name="guests[${guest_index}].name" value="${guest.name}" oninput="searchGuests(this, ${guest_index})" list="guestSuggestions-${guest_index}" required>
-                                <datalist id="guestSuggestions-${guest_index}"></datalist>
-                            </td>
-                            <td>
-                                <input type="date" name="guests[${guest_index}].dateOfBirth" value="${guest.dateOfBirth}" required>
-                            </td>
-                            <td class="actions">
-                                <button type="button" onclick="removeGuestRow(this)">Remove</button>
-                            </td>
-                        </tr>
+    <div class="container">
+        <div class="form-container">
+            <#if method == "edit">
+                <form action="/booking/${booking.ID}" method="post">
+            <#elseif method == "create">
+                <form action="/booking/new" method="post">
+            </#if>
+                <label for="roomId">Room:</label>
+                <select id="roomId" name="roomId" required>
+                    <#list rooms as room>
+                        <#if booking.room??>
+                            <option value="${room.ID}" <#if room.ID == booking.room.ID>selected</#if>>${room.name}</option>
+                        <#else>
+                            <option value="${room.ID}">${room.name}</option>
+                        </#if>
                     </#list>
-                </#if>
-            </tbody>
-        </table>
-        <button type="button" class="add-guest-btn" onclick="addGuestRow()">Add Guest</button>
+                </select>
 
-        <div class="form-footer">
-            <button type="submit">Save</button>
-            <a href="/bookings">Cancel</a>
+                <label for="customerName">Customer Name:</label>
+                <input type="text" id="customerName" name="customerName" value="${booking.customerName}" required>
+
+                <label for="startDate">Start Date:</label>
+                <input type="date" id="startDate" name="startDate" value="${booking.startDate}" required>
+
+                <label for="endDate">End Date:</label>
+                <input type="date" id="endDate" name="endDate" value="${booking.endDate}" required>
+
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" required>${booking.description}</textarea>
+
+                <h2>Guests</h2>
+                <table id="guestsTable">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Date of Birth</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <#if booking.guests??>
+                            <#list booking.guests as guest>
+                                <tr>
+                                    <td>
+                                        <input type="text" name="guests[${guest_index}].name" value="${guest.name}" oninput="searchGuests(this, ${guest_index})" list="guestSuggestions-${guest_index}" required>
+                                        <datalist id="guestSuggestions-${guest_index}"></datalist>
+                                    </td>
+                                    <td>
+                                        <input type="date" name="guests[${guest_index}].dateOfBirth" value="${guest.dateOfBirth}" required>
+                                    </td>
+                                    <td class="actions">
+                                        <button type="button" onclick="removeGuestRow(this)">Remove</button>
+                                    </td>
+                                </tr>
+                            </#list>
+                        </#if>
+                    </tbody>
+                </table>
+                <button type="button" class="add-guest-btn" onclick="addGuestRow()">Add Guest</button>
+
+                <div class="form-footer">
+                    <button type="submit">Save</button>
+                    <a href="/bookings">Cancel</a>
+                </div>
+            </form>
         </div>
-    </form>
+        <div class="bill-container">
+            <h2>Bill</h2>
+            <table id="billTable">
+                <tr>
+                    <td>Accommodation price</td>
+                    <td>0 €</td>
+                </tr>
+                <tr>
+                    <td><strong>Total</strong></td>
+                    <td><strong>0 €</strong></td>
+                </tr>
+            </table>
+        </div>
+    </div>
 </body>
 </html>

@@ -22,6 +22,8 @@ import java.util.Map;
 import com.example.demo.classes.Booking;
 import com.example.demo.classes.Guest;
 import java.util.ArrayList;
+import com.example.demo.classes.RoomPricing; // Ensure this is the correct package for RoomPricing
+import com.example.demo.services.RoomPricingService; // Ensure this is the correct package for RoomPricingService
 
 @Controller
 @DependsOn("dataInitializer")
@@ -30,11 +32,13 @@ public class BookingController {
     private final RoomService roomService;
     private final BookingService bookingService;
     private final GuestService guestService;
+    private final RoomPricingService roomPricingService;
 
-    public BookingController(RoomService roomService, BookingService bookingService, GuestService guestService) {
+    public BookingController(RoomService roomService, BookingService bookingService, GuestService guestService, RoomPricingService roomPricingService) {
         this.roomService = roomService;
         this.bookingService = bookingService;
         this.guestService = guestService;
+        this.roomPricingService = roomPricingService;
     }
 
     @GetMapping({"/bookings/{year}/{month}", "/bookings", "/bookings/"})
@@ -252,5 +256,38 @@ public class BookingController {
     @ResponseBody
     public List<Guest> searchGuests(@RequestParam("query") String query) {
         return guestService.findByName(query);
+    }
+
+    @GetMapping("/calculate-bill")
+    @ResponseBody
+    public Map<String, Object> calculateBill(
+            @RequestParam("roomId") String roomId,
+            @RequestParam("startDate") String startDate,
+            @RequestParam("endDate") String endDate,
+            @RequestParam("guestCount") int guestCount) {
+        Map<String, Object> billData = new HashMap<>();
+        try {
+            RoomPricing roomPricing = roomPricingService.getRoomPricing(roomId);
+            if (roomPricing == null) {
+                throw new IllegalArgumentException("Pricing not found for room ID: " + roomId);
+            }
+
+            LocalDate start = LocalDate.parse(startDate);
+            LocalDate end = LocalDate.parse(endDate);
+            long days = start.datesUntil(end.plusDays(1)).count();
+
+            Double dailyPrice = roomPricing.getPrice(start, guestCount);
+            if (dailyPrice == null) {
+                throw new IllegalArgumentException("No pricing available for the given date and guest count.");
+            }
+
+            double totalPrice = dailyPrice * days;
+
+            billData.put("accommodationPrice", String.format("%.2f", dailyPrice));
+            billData.put("totalPrice", String.format("%.2f", totalPrice));
+        } catch (Exception e) {
+            billData.put("error", e.getMessage());
+        }
+        return billData;
     }
 }

@@ -3,6 +3,7 @@ package com.example.demo;
 import com.example.demo.services.RoomService;
 import com.example.demo.services.BookingService;
 import com.example.demo.services.GuestService;
+import com.example.demo.services.RoomPricingService;
 import com.example.demo.classes.Room;
 import com.example.demo.classes.Booking;
 import com.example.demo.classes.Guest;
@@ -22,11 +23,13 @@ public class DataInitializer {
     private final RoomService roomService;
     private final BookingService bookingService;
     private final GuestService guestService;
+    private final RoomPricingService roomPricingService; // Добавляем сервис
 
-    public DataInitializer(RoomService roomService, BookingService bookingService, GuestService guestService) {
+    public DataInitializer(RoomService roomService, BookingService bookingService, GuestService guestService, RoomPricingService roomPricingService) {
         this.roomService = roomService;
         this.bookingService = bookingService;
         this.guestService = guestService;
+        this.roomPricingService = roomPricingService; // Инициализируем сервис
     }
 
     @EventListener(ContextRefreshedEvent.class)
@@ -194,11 +197,11 @@ public class DataInitializer {
         aprilBooking10.setGuests(List.of(guest1, guest2, guest3)); // Add guests
         bookingService.add(aprilBooking10);
 
-        // Добавление новых цен для всех комнат
-        RoomPricing room1Pricing = new RoomPricing("Room 1");
-        RoomPricing room2Pricing = new RoomPricing("Room 2");
-        RoomPricing room3Pricing = new RoomPricing("Room 3");
-        RoomPricing room4Pricing = new RoomPricing("Room 4");
+        // Создание объектов RoomPricing с использованием roomId
+        RoomPricing room1Pricing = new RoomPricing(room1.getID());
+        RoomPricing room2Pricing = new RoomPricing(room2.getID());
+        RoomPricing room3Pricing = new RoomPricing(room3.getID());
+        RoomPricing room4Pricing = new RoomPricing(room4.getID());
 
         // Периоды
         List<LocalDate[]> periods = List.of(
@@ -247,11 +250,11 @@ public class DataInitializer {
             room4Pricing.addPrice(period[0], period[1], 3, 88.50);
         }
 
-        // Вывод информации о новых ценах для проверки
-        System.out.println("Updated Room 1 Pricing: " + room1Pricing.getPricing());
-        System.out.println("Updated Room 2 Pricing: " + room2Pricing.getPricing());
-        System.out.println("Updated Room 3 Pricing: " + room3Pricing.getPricing());
-        System.out.println("Updated Room 4 Pricing: " + room4Pricing.getPricing());
+        // Сохраняем объекты RoomPricing в RoomPricingService
+        roomPricingService.addRoomPricing(room1Pricing);
+        roomPricingService.addRoomPricing(room2Pricing);
+        roomPricingService.addRoomPricing(room3Pricing);
+        roomPricingService.addRoomPricing(room4Pricing);
 
         System.out.println("Data initialization completed.");
     }
