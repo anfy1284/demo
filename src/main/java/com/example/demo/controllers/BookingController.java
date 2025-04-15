@@ -150,6 +150,7 @@ public class BookingController {
             @RequestParam("endDate") String endDate,
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
+            @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
             @RequestParam Map<String, String> allParams,
             Model model) {
         try {
@@ -191,6 +192,7 @@ public class BookingController {
             booking.setEndDate(endDate);
             booking.setDescription(description);
             booking.setDogs(dogs); // Устанавливаем количество собак
+            booking.setIncludeBreakfast(includeBreakfast); // Устанавливаем флаг завтраков
 
             // Process guests
             List<Guest> guests = new ArrayList<>();
@@ -308,7 +310,8 @@ public class BookingController {
             @RequestParam(value = "guestCount", required = false) Integer guestCount,
             @RequestParam(value = "guests", required = false) List<String> guestDatesOfBirth,
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
-            @RequestParam(value = "bookingId", required = false) String bookingId) {
+            @RequestParam(value = "bookingId", required = false) String bookingId,
+            @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast) {
         List<Map<String, String>> billItems = new ArrayList<>();
         try {
             if (bookingId != null) {
@@ -341,6 +344,7 @@ public class BookingController {
             double accommodationPrice = 0.0;
             double priceForChildren3To5 = roomPricing.getPriceForChildren3To5();
             double priceForChildrenUnder3 = roomPricing.getPriceForChildrenUnder3();
+            double totalPrice = 0.0; // Initialize totalPrice
 
             LocalDate today = LocalDate.now();
             int adultGuestCount = 0;
@@ -447,8 +451,47 @@ public class BookingController {
                 ));
             }
 
+            // Добавляем стоимость завтраков по категориям
+            if (includeBreakfast) {
+                double breakfastPriceUnder3 = childrenUnder3Count * roomPricing.getBreakfastPriceUnder3() * days;
+                double breakfastPrice3To5 = children3To5Count * roomPricing.getBreakfastPrice3To5() * days;
+                double breakfastPrice6To13 = children6To15Count * roomPricing.getBreakfastPrice6To13() * days;
+                double breakfastPrice14AndOlder = adultGuestCount * roomPricing.getBreakfastPrice14AndOlder() * days;
+
+                if (breakfastPriceUnder3 > 0) {
+                    billItems.add(Map.of(
+                        "key", "breakfastPriceUnder3",
+                        "label", "Frühstück (0-2 Jahre)",
+                        "value", String.format("%.2f €", breakfastPriceUnder3)
+                    ));
+                }
+                if (breakfastPrice3To5 > 0) {
+                    billItems.add(Map.of(
+                        "key", "breakfastPrice3To5",
+                        "label", "Frühstück (3-5 Jahre)",
+                        "value", String.format("%.2f €", breakfastPrice3To5)
+                    ));
+                }
+                if (breakfastPrice6To13 > 0) {
+                    billItems.add(Map.of(
+                        "key", "breakfastPrice6To13",
+                        "label", "Frühstück (6-13 Jahre)",
+                        "value", String.format("%.2f €", breakfastPrice6To13)
+                    ));
+                }
+                if (breakfastPrice14AndOlder > 0) {
+                    billItems.add(Map.of(
+                        "key", "breakfastPrice14AndOlder",
+                        "label", "Frühstück (14+ Jahre)",
+                        "value", String.format("%.2f €", breakfastPrice14AndOlder)
+                    ));
+                }
+
+                totalPrice += breakfastPriceUnder3 + breakfastPrice3To5 + breakfastPrice6To13 + breakfastPrice14AndOlder;
+            }
+
             // Итоговая строка
-            double totalPrice = accommodationPrice + children3To5Price + dogFee + kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
+            totalPrice += accommodationPrice + children3To5Price + dogFee + kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
             billItems.add(Map.of(
                 "key", "totalPrice",
                 "label", "Gesamt",
@@ -480,8 +523,9 @@ public class BookingController {
                 booking.getEndDate(),
                 null,
                 booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
-                booking.getDogs(), // Исправлено: добавлен параметр dogs
-                null // Explicitly passing null for bookingId
+                booking.getDogs(),
+                id,
+                booking.isIncludeBreakfast() // Передаем includeBreakfast из бронирования
             );
 
             model.addAttribute("booking", booking);

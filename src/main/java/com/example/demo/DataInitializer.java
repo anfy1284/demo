@@ -279,6 +279,27 @@ public class DataInitializer {
         room3Pricing.setDogFeePerNight(10.0);
         room4Pricing.setDogFeePerNight(10.0);
 
+        // Устанавливаем стоимость завтраков
+        room1Pricing.setBreakfastPriceUnder3(0.0);
+        room1Pricing.setBreakfastPrice3To5(3.5);
+        room1Pricing.setBreakfastPrice6To13(8.5);
+        room1Pricing.setBreakfastPrice14AndOlder(14.5);
+
+        room2Pricing.setBreakfastPriceUnder3(0.0);
+        room2Pricing.setBreakfastPrice3To5(3.5);
+        room2Pricing.setBreakfastPrice6To13(8.5);
+        room2Pricing.setBreakfastPrice14AndOlder(14.5);
+
+        room3Pricing.setBreakfastPriceUnder3(0.0);
+        room3Pricing.setBreakfastPrice3To5(3.5);
+        room3Pricing.setBreakfastPrice6To13(8.5);
+        room3Pricing.setBreakfastPrice14AndOlder(14.5);
+
+        room4Pricing.setBreakfastPriceUnder3(0.0);
+        room4Pricing.setBreakfastPrice3To5(3.5);
+        room4Pricing.setBreakfastPrice6To13(8.5);
+        room4Pricing.setBreakfastPrice14AndOlder(14.5);
+
         // Сохраняем объекты RoomPricing в RoomPricingService
         roomPricingService.addRoomPricing(room1Pricing);
         roomPricingService.addRoomPricing(room2Pricing);

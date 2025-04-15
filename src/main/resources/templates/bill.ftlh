@@ -96,10 +96,6 @@
                             <td>${item.value}</td>
                         </tr>
                     </#list>
-                <#else>
-                    <tr>
-                        <td colspan="2">Keine Rechnungsdaten verfügbar</td>
-                    </tr>
                 </#if>
             </tbody>
         </table>

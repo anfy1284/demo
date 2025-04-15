@@ -21,6 +21,7 @@ public class Booking {
     private String description; // description of the booking
     private int duration; // Продолжительность бронирования в днях
     private int dogs; // Количество собак
+    private boolean includeBreakfast; // Учитывать завтраки
 
     public String getRoomId() {
         return room != null ? room.getID() : null;
@@ -40,6 +41,14 @@ public class Booking {
 
     public void setDogs(int dogs) {
         this.dogs = dogs;
+    }
+
+    public boolean isIncludeBreakfast() {
+        return includeBreakfast;
+    }
+
+    public void setIncludeBreakfast(boolean includeBreakfast) {
+        this.includeBreakfast = includeBreakfast;
     }
 
     public static Booking createEmpty() {

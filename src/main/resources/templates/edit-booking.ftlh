@@ -79,6 +79,7 @@
         const roomId = document.getElementById('roomId').value;
         const guestCount = document.querySelectorAll('#guestsTable tbody tr').length;
         const dogs = document.getElementById('dogs').checked ? 1 : 0; // Учитываем значение чекбокса
+        const includeBreakfast = document.getElementById('includeBreakfast').checked ? true : false; // Добавлено
 
         const guestDatesOfBirth = Array.from(document.querySelectorAll('input[name^="guests["][name$="].dateOfBirth"]'))
             .map(input => input.value)
@@ -90,6 +91,7 @@
                 `&endDate=` + endDate +
                 `&guestCount=` + guestCount +
                 `&dogs=` + dogs + // Передаем значение собак
+                `&includeBreakfast=` + includeBreakfast + // Передаем параметр
                 `&guests=` + encodeURIComponent(guestDatesOfBirth.join(',')));
             const billData = await response.json();
 
@@ -381,6 +383,13 @@
                     <label for="dogs" style="margin: 0;">Gebühr für den Hund:</label>
                     <input type="checkbox" id="dogs" name="dogs" value="1" 
                            <#if booking.dogs?exists && (booking.dogs?number == 1)>checked</#if> 
+                           onchange="calculateBill()" style="margin: 0;">
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px; line-height: 1; margin-bottom: 20px;">
+                    <label for="includeBreakfast" style="margin: 0;">Frühstück hinzufügen:</label>
+                    <input type="checkbox" id="includeBreakfast" name="includeBreakfast" value="1"
+                           <#if booking.includeBreakfast?? && booking.includeBreakfast>checked</#if>
                            onchange="calculateBill()" style="margin: 0;">
                 </div>
 

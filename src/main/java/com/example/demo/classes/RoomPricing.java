@@ -14,6 +14,10 @@ public class RoomPricing {
     private double kurbeitrag6To15 = 1.0; // Курортный сбор для детей от 6 до 15 лет включительно
     private double kurbeitrag16AndOlder = 2.1; // Курортный сбор для лиц 16 лет и старше
     private double dogFeePerNight = 10.0; // Стоимость за собаку за ночь
+    private double breakfastPriceUnder3 = 0.0; // Бесплатно для детей до 2 лет включительно
+    private double breakfastPrice3To5 = 3.5; // Цена для детей от 3 до 5 лет
+    private double breakfastPrice6To13 = 8.5; // Цена для детей от 6 до 13 лет
+    private double breakfastPrice14AndOlder = 14.5; // Цена для лиц от 14 лет и старше
 
     public RoomPricing(String roomId) {
         this.roomId = roomId;
@@ -90,6 +94,38 @@ public class RoomPricing {
 
     public void setDogFeePerNight(double dogFeePerNight) {
         this.dogFeePerNight = dogFeePerNight;
+    }
+
+    public double getBreakfastPriceUnder3() {
+        return breakfastPriceUnder3;
+    }
+
+    public void setBreakfastPriceUnder3(double breakfastPriceUnder3) {
+        this.breakfastPriceUnder3 = breakfastPriceUnder3;
+    }
+
+    public double getBreakfastPrice3To5() {
+        return breakfastPrice3To5;
+    }
+
+    public void setBreakfastPrice3To5(double breakfastPrice3To5) {
+        this.breakfastPrice3To5 = breakfastPrice3To5;
+    }
+
+    public double getBreakfastPrice6To13() {
+        return breakfastPrice6To13;
+    }
+
+    public void setBreakfastPrice6To13(double breakfastPrice6To13) {
+        this.breakfastPrice6To13 = breakfastPrice6To13;
+    }
+
+    public double getBreakfastPrice14AndOlder() {
+        return breakfastPrice14AndOlder;
+    }
+
+    public void setBreakfastPrice14AndOlder(double breakfastPrice14AndOlder) {
+        this.breakfastPrice14AndOlder = breakfastPrice14AndOlder;
     }
 
     // Добавить цену для определённого периода и количества гостей
