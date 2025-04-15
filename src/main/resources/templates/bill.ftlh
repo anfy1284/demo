@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Bill</title>
+    <title>Rechnung</title>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -61,38 +61,38 @@
 </head>
 <body>
     <div class="bill-container">
-        <h1>Booking Bill</h1>
-        <h2>Booking Details</h2>
-        <p><strong>Customer Name:</strong> ${booking.customerName}</p>
-        <p><strong>Room:</strong> ${booking.room.name}</p>
-        <p><strong>Start Date:</strong> ${booking.startDate}</p>
-        <p><strong>End Date:</strong> ${booking.endDate}</p>
-        <p><strong>Guests:</strong></p>
+        <h1>Buchungsrechnung</h1>
+        <h2>Buchungsdetails</h2>
+        <p><strong>Kundenname:</strong> ${booking.customerName}</p>
+        <p><strong>Zimmer:</strong> ${booking.room.name}</p>
+        <p><strong>Anfangsdatum:</strong> ${booking.startDate}</p>
+        <p><strong>Enddatum:</strong> ${booking.endDate}</p>
+        <p><strong>Gäste:</strong></p>
         <ul>
             <#list booking.guests as guest>
                 <li>${guest.name} (${guest.dateOfBirth})</li>
             </#list>
         </ul>
-        <h2>Bill Summary</h2>
+        <h2>Rechnungsübersicht</h2>
         <table>
             <thead>
                 <tr>
-                    <th>Description</th>
-                    <th>Amount</th>
+                    <th>Beschreibung</th>
+                    <th>Betrag</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>Accommodation Price</td>
+                    <td>Unterkunftspreis</td>
                     <td>${bill.accommodationPrice} €</td>
                 </tr>
                 <tr class="total-row">
-                    <td>Total</td>
+                    <td>Gesamt</td>
                     <td>${bill.totalPrice} €</td>
                 </tr>
             </tbody>
         </table>
-        <button class="print-btn" onclick="window.print()">Print Bill</button>
+        <button class="print-btn" onclick="window.print()">Rechnung drucken</button>
     </div>
 </body>
 </html>

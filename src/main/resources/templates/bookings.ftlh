@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Bookings</title>
+    <title>Buchungen</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         body {
@@ -71,6 +71,9 @@
         td {
             background-color: #fff;
         }
+        td.date-column {
+            width: 120px; /* Фиксированная ширина для всех дат */
+        }
         td a {
             text-decoration: none;
             color: #007bff;
@@ -106,17 +109,17 @@
     </style>
 </head>
 <body>
-    <h1>Bookings for ${month}/${year}</h1>
+    <h1>Buchungen für ${month}/${year}</h1>
     <div class="month-navigation">
         <form action="/bookings/${previousYear}/${previousMonth}" method="get">
             <button type="submit">
-                <span class="material-icons">arrow_back</span> Previous
+                <span class="material-icons">arrow_back</span> Zurück
             </button>
         </form>
         <span>${month}/${year}</span>
         <form action="/bookings/${nextYear}/${nextMonth}" method="get">
             <button type="submit">
-                Next <span class="material-icons">arrow_forward</span>
+                Weiter <span class="material-icons">arrow_forward</span>
             </button>
         </form>
     </div>
@@ -124,7 +127,7 @@
         <table>
             <thead>
                 <tr>
-                    <th>Date</th>
+                    <th class="date-column">Datum</th>
                     <#list rooms as room>
                         <th>${room.name}</th>
                     </#list>
@@ -133,7 +136,7 @@
             <tbody>
                 <#list datesOfMonth as date>
                     <tr>
-                        <td>${displayDatesOfMonth[date_index]}</td> <!-- Используем новую переменную -->
+                        <td class="date-column">${displayDatesOfMonth[date_index]}</td> <!-- Используем новую переменную -->
                         <#list rooms as room>
                             <#if room.ID??>
                                 <#if bookingsMap[date][room.ID]??>
@@ -153,7 +156,7 @@
                                     </td>
                                 </#if>
                             <#else>
-                                <td>N/A</td>
+                                <td>Nicht verfügbar</td>
                             </#if>
                         </#list>
                     </tr>

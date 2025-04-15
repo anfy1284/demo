@@ -234,15 +234,27 @@ public class BookingController {
             }
 
             Booking booking = Booking.createEmpty();
-
             booking.setRoom(room);
             booking.setStartDate(date);
             booking.setEndDate(date);
 
+            // Calculate bill for the initial state
+            RoomPricing roomPricing = roomPricingService.getRoomPricing(roomId);
+            if (roomPricing != null) {
+                LocalDate start = LocalDate.parse(date);
+                Double dailyPrice = roomPricing.getPrice(start, 1); // Default guest count = 1
+                if (dailyPrice != null) {
+                    double totalPrice = dailyPrice;
+                    Map<String, Object> bill = new HashMap<>();
+                    bill.put("accommodationPrice", String.format("%.2f", dailyPrice));
+                    bill.put("totalPrice", String.format("%.2f", totalPrice));
+                    model.addAttribute("bill", bill);
+                }
+            }
+
             model.addAttribute("method", "create");
             model.addAttribute("booking", booking);
             model.addAttribute("rooms", roomService.getAll());
-            //model.addAttribute("query", "");
             return "edit-booking";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");

@@ -15,17 +15,35 @@
         }
     }
 
-    function onGuestSelected(input, index) {
+    async function onGuestSelected(input, index) {
         const datalist = document.getElementById(`guestSuggestions-` + index);
-        const selectedOption = Array.from(datalist.options).find(option => option.value === input.value);
-        if (selectedOption) {
+        const selectedOption = Array.from(datalist.options).find(option => option.value.trim() === input.value.trim());
+        const dobInput = document.querySelector(`input[name="guests[` + index + `].dateOfBirth"]`);
+
+        if (selectedOption && selectedOption.dataset.dateOfBirth) {
             const dateOfBirth = selectedOption.dataset.dateOfBirth;
-            const dobInput = document.querySelector(`input[name="guests[` + index + `].dateOfBirth"]`);
             if (dobInput) {
                 dobInput.value = dateOfBirth; // Устанавливаем дату рождения
-                calculateBill(); // Пересчитываем прайс при выборе гостя
+            }
+        } else {
+            // Если дата рождения не найдена, выполняем запрос к серверу
+            const response = await fetch(`/guests/search?query=` + encodeURIComponent(input.value));
+            const guests = await response.json();
+            const guest = guests.find(g => g.name.trim().toLowerCase() === input.value.trim().toLowerCase());
+            if (guest && guest.dateOfBirth && dobInput) {
+                dobInput.value = guest.dateOfBirth; // Устанавливаем дату рождения из базы
+            } else if (dobInput) {
+                dobInput.value = ''; // Очищаем поле, если дата рождения не найдена
             }
         }
+
+        // Убедимся, что событие `change` срабатывает для обновления интерфейса
+        if (dobInput) {
+            const event = new Event('change', { bubbles: true });
+            dobInput.dispatchEvent(event);
+        }
+
+        calculateBill(); // Пересчитываем прайс при выборе гостя
     }
 
     function addGuestRow() {
@@ -104,7 +122,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Edit Booking</title>
+    <title>Buchung bearbeiten</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
@@ -293,13 +311,13 @@
 <body>
     <div class="container">
         <div class="form-container">
-            <h1>Edit Booking</h1>
+            <h1>Buchung bearbeiten</h1>
             <#if method == "edit">
                 <form action="/booking/${booking.ID}" method="post" onsubmit="return validateForm()">
             <#elseif method == "create">
                 <form action="/booking/new" method="post" onsubmit="return validateForm()">
             </#if>
-                <label for="roomId">Room:</label>
+                <label for="roomId">Zimmer:</label>
                 <select id="roomId" name="roomId" required>
                     <#list rooms as room>
                         <#if booking.room??>
@@ -310,25 +328,25 @@
                     </#list>
                 </select>
 
-                <label for="customerName">Customer Name:</label>
+                <label for="customerName">Kundenname:</label>
                 <input type="text" id="customerName" name="customerName" value="${booking.customerName}" required>
 
-                <label for="startDate">Start Date:</label>
+                <label for="startDate">Anfangsdatum:</label>
                 <input type="date" id="startDate" name="startDate" value="${booking.startDate}" onchange="calculateBill()" required>
 
-                <label for="endDate">End Date:</label>
+                <label for="endDate">Enddatum:</label>
                 <input type="date" id="endDate" name="endDate" value="${booking.endDate}" onchange="calculateBill()" required>
 
-                <label for="description">Description:</label>
+                <label for="description">Beschreibung:</label>
                 <textarea id="description" name="description">${booking.description}</textarea>
 
-                <h2>Guests</h2>
+                <h2>Gäste</h2>
                 <div class="guest-section">
                     <table id="guestsTable">
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Date of Birth</th>
+                                <th>Geburtsdatum</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -354,31 +372,31 @@
                         </tbody>
                     </table>
                     <button type="button" class="add-guest-btn" onclick="addGuestRow()">
-                        <span class="material-icons">person_add</span> Add Guest
+                        <span class="material-icons">person_add</span> Gast hinzufügen
                     </button>
                 </div>
 
                 <div class="form-footer">
-                    <button type="submit">Save</button>
-                    <a href="/bookings">Cancel</a>
+                    <button type="submit">Speichern</button>
+                    <a href="/bookings">Abbrechen</a>
                 </div>
             </form>
         </div>
         <div class="bill-container">
-            <h2>Bill</h2>
+            <h2>Rechnung</h2>
             <table id="billTable">
                 <tr>
-                    <td>Accommodation price</td>
+                    <td>Unterkunftspreis</td>
                     <td>0 €</td>
                 </tr>
                 <tr>
-                    <td><strong>Total</strong></td>
+                    <td><strong>Gesamt</strong></td>
                     <td><strong>0 €</strong></td>
                 </tr>
             </table>
             <#if method == "edit">
                 <button class="print-bill-btn" onclick="window.location.href='/booking/${booking.ID}/bill'">
-                    <span class="material-icons">print</span> Print Bill
+                    <span class="material-icons">print</span> Rechnung drucken
                 </button>
             </#if>
         </div>
