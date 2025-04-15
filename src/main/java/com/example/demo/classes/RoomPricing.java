@@ -7,6 +7,8 @@ import java.util.Map;
 public class RoomPricing {
     private String roomId; // ID комнаты
     private Map<Period, Map<Integer, Double>> pricing; // Цены в разрезе периода и количества гостей
+    private double priceForChildrenUnder3 = 0.0; // Бесплатно для детей до 2 лет включительно
+    private double priceForChildren3To5 = 10.0; // Фиксированная цена для детей от 3 до 5 лет
 
     public RoomPricing(String roomId) {
         this.roomId = roomId;
@@ -27,6 +29,22 @@ public class RoomPricing {
 
     public void setPricing(Map<Period, Map<Integer, Double>> pricing) {
         this.pricing = pricing;
+    }
+
+    public double getPriceForChildrenUnder3() {
+        return priceForChildrenUnder3;
+    }
+
+    public void setPriceForChildrenUnder3(double priceForChildrenUnder3) {
+        this.priceForChildrenUnder3 = priceForChildrenUnder3;
+    }
+
+    public double getPriceForChildren3To5() {
+        return priceForChildren3To5;
+    }
+
+    public void setPriceForChildren3To5(double priceForChildren3To5) {
+        this.priceForChildren3To5 = priceForChildren3To5;
     }
 
     // Добавить цену для определённого периода и количества гостей

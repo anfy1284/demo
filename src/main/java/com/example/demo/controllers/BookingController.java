@@ -300,13 +300,31 @@ public class BookingController {
     @GetMapping("/calculate-bill")
     @ResponseBody
     public List<Map<String, String>> calculateBill(
-            @RequestParam("roomId") String roomId,
-            @RequestParam("startDate") String startDate,
-            @RequestParam("endDate") String endDate,
-            @RequestParam("guestCount") int guestCount,
-            @RequestParam(value = "guests", required = false) List<String> guestDatesOfBirth) {
+            @RequestParam(value = "roomId", required = false) String roomId,
+            @RequestParam(value = "startDate", required = false) String startDate,
+            @RequestParam(value = "endDate", required = false) String endDate,
+            @RequestParam(value = "guestCount", required = false) Integer guestCount,
+            @RequestParam(value = "guests", required = false) List<String> guestDatesOfBirth,
+            @RequestParam(value = "bookingId", required = false) String bookingId) {
         List<Map<String, String>> billItems = new ArrayList<>();
         try {
+            if (bookingId != null) {
+                Booking booking = bookingService.getById(bookingId);
+                if (booking == null) {
+                    throw new IllegalArgumentException("Booking not found for ID: " + bookingId);
+                }
+                roomId = booking.getRoom().getID();
+                startDate = booking.getStartDate();
+                endDate = booking.getEndDate();
+                guestDatesOfBirth = booking.getGuests().stream()
+                        .map(Guest::getDateOfBirth)
+                        .toList();
+            }
+
+            if (roomId == null || startDate == null || endDate == null) {
+                throw new IllegalArgumentException("Missing required parameters for bill calculation.");
+            }
+
             RoomPricing roomPricing = roomPricingService.getRoomPricing(roomId);
             if (roomPricing == null) {
                 throw new IllegalArgumentException("Pricing not found for room ID: " + roomId);
@@ -316,19 +334,14 @@ public class BookingController {
             LocalDate end = LocalDate.parse(endDate);
             long days = start.datesUntil(end.plusDays(1)).count();
 
-            Double dailyPrice = roomPricing.getPrice(start, guestCount);
-            if (dailyPrice == null) {
-                throw new IllegalArgumentException("No pricing available for the given date and guest count.");
-            }
+            double accommodationPrice = 0.0;
+            double priceForChildren3To5 = roomPricing.getPriceForChildren3To5();
+            double priceForChildrenUnder3 = roomPricing.getPriceForChildrenUnder3();
 
-            double accommodationPrice = dailyPrice * days;
-
-            // Расчет Kurtaxe
-            double touristTaxChildren = 0.0;
-            double touristTaxAdults = 0.0;
-            double taxChildRate = 1.0; // Для детей 6-15 лет
-            double taxAdultRate = 2.10; // Для гостей 16 лет и старше
             LocalDate today = LocalDate.now();
+            int adultGuestCount = 0;
+            int children3To5Count = 0;
+            int childrenUnder3Count = 0;
 
             if (guestDatesOfBirth != null) {
                 for (String dob : guestDatesOfBirth) {
@@ -338,39 +351,51 @@ public class BookingController {
                         age--;
                     }
 
-                    if (age >= 6 && age <= 15) {
-                        touristTaxChildren += taxChildRate * days;
-                    } else if (age >= 16) {
-                        touristTaxAdults += taxAdultRate * days;
+                    if (age <= 2) {
+                        childrenUnder3Count++;
+                    } else if (age >= 3 && age <= 5) {
+                        children3To5Count++;
+                    } else if (age >= 6) {
+                        adultGuestCount++;
                     }
                 }
             }
 
-            // Формируем структуру для отображения, исключая нулевые строки
+            // Рассчитываем стоимость проживания для взрослых
+            Double dailyPriceForAdults = roomPricing.getPrice(start, adultGuestCount);
+            if (dailyPriceForAdults == null) {
+                throw new IllegalArgumentException("No pricing available for the given date and adult guest count.");
+            }
+            accommodationPrice += dailyPriceForAdults * days;
+
+            // Рассчитываем стоимость для детей от 3 до 5 лет
+            double children3To5Price = children3To5Count * priceForChildren3To5 * days;
+
+            // Добавляем строки в счет
             if (accommodationPrice > 0) {
                 billItems.add(Map.of(
                     "key", "accommodationPrice",
-                    "label", "Unterkunftspreis (" + guestCount + " Gäste)",
+                    "label", "Unterkunftspreis (Erwachsene и Kinder ab 6 Jahren)",
                     "value", String.format("%.2f €", accommodationPrice)
                 ));
             }
-            if (touristTaxChildren > 0) {
+            if (children3To5Price > 0) {
                 billItems.add(Map.of(
-                    "key", "touristTaxChildren",
-                    "label", "Kurtaxe (Kinder 6-15 Jahre)",
-                    "value", String.format("%.2f €", touristTaxChildren)
+                    "key", "children3To5Price",
+                    "label", "Kinderpreis (3-5 Jahre)",
+                    "value", String.format("%.2f €", children3To5Price)
                 ));
             }
-            if (touristTaxAdults > 0) {
+            if (childrenUnder3Count > 0) {
                 billItems.add(Map.of(
-                    "key", "touristTaxAdults",
-                    "label", "Kurtaxe (ab 16 Jahre)",
-                    "value", String.format("%.2f €", touristTaxAdults)
+                    "key", "childrenUnder3Price",
+                    "label", "Kinderpreis (0-2 Jahre, kostenlos)",
+                    "value", "0.00 €"
                 ));
             }
 
-            // Итоговая строка всегда добавляется
-            double totalPrice = accommodationPrice + touristTaxChildren + touristTaxAdults;
+            // Итоговая строка
+            double totalPrice = accommodationPrice + children3To5Price;
             billItems.add(Map.of(
                 "key", "totalPrice",
                 "label", "Gesamt",
@@ -395,70 +420,15 @@ public class BookingController {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
 
-            RoomPricing roomPricing = roomPricingService.getRoomPricing(booking.getRoom().getID());
-            if (roomPricing == null) {
-                throw new IllegalArgumentException("Pricing not found for room ID: " + booking.getRoom().getID());
-            }
-
-            LocalDate start = LocalDate.parse(booking.getStartDate());
-            LocalDate end = LocalDate.parse(booking.getEndDate());
-            long days = start.datesUntil(end.plusDays(1)).count();
-
-            Double dailyPrice = roomPricing.getPrice(start, booking.getGuests().size());
-            if (dailyPrice == null) {
-                throw new IllegalArgumentException("No pricing available for the given date and guest count.");
-            }
-
-            double accommodationPrice = dailyPrice * days;
-
-            // Расчет Kurtaxe
-            double touristTaxChildren = 0.0;
-            double touristTaxAdults = 0.0;
-            double taxChildRate = 1.0; // Для детей 6-15 лет
-            double taxAdultRate = 2.10; // Для гостей 16 лет и старше
-            LocalDate today = LocalDate.now();
-
-            for (Guest guest : booking.getGuests()) {
-                LocalDate dob = LocalDate.parse(guest.getDateOfBirth());
-                int age = today.getYear() - dob.getYear();
-                if (today.isBefore(dob.plusYears(age))) {
-                    age--;
-                }
-
-                if (age >= 6 && age <= 15) {
-                    touristTaxChildren += taxChildRate * days;
-                } else if (age >= 16) {
-                    touristTaxAdults += taxAdultRate * days;
-                }
-            }
-
-            // Формируем структуру для отображения
-            List<Map<String, String>> billItems = new ArrayList<>();
-            if (accommodationPrice > 0) {
-                billItems.add(Map.of(
-                    "label", "Unterkunftspreis (" + booking.getGuests().size() + " Gäste)",
-                    "value", String.format("%.2f €", accommodationPrice)
-                ));
-            }
-            if (touristTaxChildren > 0) {
-                billItems.add(Map.of(
-                    "label", "Kurtaxe (Kinder 6-15 Jahre)",
-                    "value", String.format("%.2f €", touristTaxChildren)
-                ));
-            }
-            if (touristTaxAdults > 0) {
-                billItems.add(Map.of(
-                    "label", "Kurtaxe (ab 16 Jahre)",
-                    "value", String.format("%.2f €", touristTaxAdults)
-                ));
-            }
-
-            // Итоговая строка всегда добавляется
-            double totalPrice = accommodationPrice + touristTaxChildren + touristTaxAdults;
-            billItems.add(Map.of(
-                "label", "Gesamt",
-                "value", String.format("%.2f €", totalPrice)
-            ));
+            // Используем данные из calculateBill
+            List<Map<String, String>> billItems = calculateBill(
+                booking.getRoom().getID(),
+                booking.getStartDate(),
+                booking.getEndDate(),
+                null,
+                booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
+                null
+            );
 
             model.addAttribute("booking", booking);
             model.addAttribute("bill", billItems);
