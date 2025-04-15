@@ -78,6 +78,7 @@
         const endDate = document.getElementById('endDate').value;
         const roomId = document.getElementById('roomId').value;
         const guestCount = document.querySelectorAll('#guestsTable tbody tr').length;
+        const dogs = document.getElementById('dogs').checked ? 1 : 0; // Учитываем значение чекбокса
 
         const guestDatesOfBirth = Array.from(document.querySelectorAll('input[name^="guests["][name$="].dateOfBirth"]'))
             .map(input => input.value)
@@ -88,6 +89,7 @@
                 `&startDate=` + startDate +
                 `&endDate=` + endDate +
                 `&guestCount=` + guestCount +
+                `&dogs=` + dogs + // Передаем значение собак
                 `&guests=` + encodeURIComponent(guestDatesOfBirth.join(',')));
             const billData = await response.json();
 
@@ -295,6 +297,9 @@
         .bill-container table td:first-child {
             text-align: left;
         }
+        .bill-container table td:nth-child(2) {
+            width: 90px;
+        }
         .guest-section {
             display: flex;
             flex-direction: column;
@@ -371,6 +376,13 @@
 
                 <label for="description">Beschreibung:</label>
                 <textarea id="description" name="description">${booking.description}</textarea>
+
+                <div style="display: flex; align-items: center; gap: 10px; line-height: 1; margin-bottom: 20px;">
+                    <label for="dogs" style="margin: 0;">Gebühr für den Hund:</label>
+                    <input type="checkbox" id="dogs" name="dogs" value="1" 
+                           <#if booking.dogs?exists && (booking.dogs?number == 1)>checked</#if> 
+                           onchange="calculateBill()" style="margin: 0;">
+                </div>
 
                 <h2>Gäste</h2>
                 <div class="guest-section">

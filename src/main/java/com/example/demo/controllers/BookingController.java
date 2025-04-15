@@ -149,6 +149,7 @@ public class BookingController {
             @RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate,
             @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam Map<String, String> allParams,
             Model model) {
         try {
@@ -189,6 +190,7 @@ public class BookingController {
             booking.setStartDate(startDate);
             booking.setEndDate(endDate);
             booking.setDescription(description);
+            booking.setDogs(dogs); // Устанавливаем количество собак
 
             // Process guests
             List<Guest> guests = new ArrayList<>();
@@ -305,6 +307,7 @@ public class BookingController {
             @RequestParam(value = "endDate", required = false) String endDate,
             @RequestParam(value = "guestCount", required = false) Integer guestCount,
             @RequestParam(value = "guests", required = false) List<String> guestDatesOfBirth,
+            @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam(value = "bookingId", required = false) String bookingId) {
         List<Map<String, String>> billItems = new ArrayList<>();
         try {
@@ -319,6 +322,7 @@ public class BookingController {
                 guestDatesOfBirth = booking.getGuests().stream()
                         .map(Guest::getDateOfBirth)
                         .toList();
+                dogs = booking.getDogs(); // Исправлено: добавлен метод getDogs в Booking
             }
 
             if (roomId == null || startDate == null || endDate == null) {
@@ -342,6 +346,7 @@ public class BookingController {
             int adultGuestCount = 0;
             int children3To5Count = 0;
             int childrenUnder3Count = 0;
+            int children6To15Count = 0;
 
             if (guestDatesOfBirth != null) {
                 for (String dob : guestDatesOfBirth) {
@@ -355,7 +360,9 @@ public class BookingController {
                         childrenUnder3Count++;
                     } else if (age >= 3 && age <= 5) {
                         children3To5Count++;
-                    } else if (age >= 6) {
+                    } else if (age >= 6 && age <= 15) {
+                        children6To15Count++;
+                    } else if (age >= 16) {
                         adultGuestCount++;
                     }
                 }
@@ -370,6 +377,14 @@ public class BookingController {
 
             // Рассчитываем стоимость для детей от 3 до 5 лет
             double children3To5Price = children3To5Count * priceForChildren3To5 * days;
+
+            // Рассчитываем стоимость за собак
+            double dogFee = dogs * roomPricing.getDogFeePerNight() * days;
+
+            // Рассчитываем курортный сбор
+            double kurbeitragUnder6 = childrenUnder3Count * roomPricing.getKurbeitragUnder6() * days;
+            double kurbeitrag6To15 = children6To15Count * roomPricing.getKurbeitrag6To15() * days;
+            double kurbeitrag16AndOlder = adultGuestCount * roomPricing.getKurbeitrag16AndOlder() * days;
 
             // Добавляем строки в счет
             if (accommodationPrice > 0) {
@@ -393,9 +408,47 @@ public class BookingController {
                     "value", "0.00 €"
                 ));
             }
+            if (kurbeitragUnder6 > 0) {
+                billItems.add(Map.of(
+                    "key", "kurbeitragUnder6",
+                    "label", "Kurbeitrag (0-5 Jahre)",
+                    "value", String.format("%.2f €", kurbeitragUnder6)
+                ));
+            }
+            if (kurbeitrag6To15 > 0) {
+                billItems.add(Map.of(
+                    "key", "kurbeitrag6To15",
+                    "label", "Kurbeitrag (6-15 Jahre)",
+                    "value", String.format("%.2f €", kurbeitrag6To15)
+                ));
+            }
+            if (kurbeitrag16AndOlder > 0) {
+                billItems.add(Map.of(
+                    "key", "kurbeitrag16AndOlder",
+                    "label", "Kurbeitrag (16+ Jahre)",
+                    "value", String.format("%.2f €", kurbeitrag16AndOlder)
+                ));
+            }
+            if (dogFee > 0) {
+                billItems.add(Map.of(
+                    "key", "dogFee",
+                    "label", "Gebühr für den Hund",
+                    "value", String.format("%.2f €", dogFee)
+                ));
+            }
+
+            // Добавляем стоимость финальной уборки для короткого пребывания
+            if (days <= 3) {
+                double finalCleaningFee = roomPricing.getFinalCleaningFeeShortStay();
+                billItems.add(Map.of(
+                    "key", "finalCleaningFee",
+                    "label", "Endreinigung (Kurzaufenthalt)",
+                    "value", String.format("%.2f €", finalCleaningFee)
+                ));
+            }
 
             // Итоговая строка
-            double totalPrice = accommodationPrice + children3To5Price;
+            double totalPrice = accommodationPrice + children3To5Price + dogFee + kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
             billItems.add(Map.of(
                 "key", "totalPrice",
                 "label", "Gesamt",
@@ -427,7 +480,8 @@ public class BookingController {
                 booking.getEndDate(),
                 null,
                 booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
-                null
+                booking.getDogs(), // Исправлено: добавлен параметр dogs
+                null // Explicitly passing null for bookingId
             );
 
             model.addAttribute("booking", booking);
@@ -439,4 +493,5 @@ public class BookingController {
             return "error";
         }
     }
+
 }

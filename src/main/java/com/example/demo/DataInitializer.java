@@ -250,6 +250,35 @@ public class DataInitializer {
             room4Pricing.addPrice(period[0], period[1], 3, 88.50);
         }
 
+        // Устанавливаем стоимость финальной уборки
+        room1Pricing.setFinalCleaningFeeShortStay(40.00);
+        room2Pricing.setFinalCleaningFeeShortStay(60.00);
+        room3Pricing.setFinalCleaningFeeShortStay(30.00);
+        room4Pricing.setFinalCleaningFeeShortStay(30.00);
+
+        // Устанавливаем стоимость курортного сбора
+        room1Pricing.setKurbeitragUnder6(0.0);
+        room1Pricing.setKurbeitrag6To15(1.0);
+        room1Pricing.setKurbeitrag16AndOlder(2.1);
+
+        room2Pricing.setKurbeitragUnder6(0.0);
+        room2Pricing.setKurbeitrag6To15(1.0);
+        room2Pricing.setKurbeitrag16AndOlder(2.1);
+
+        room3Pricing.setKurbeitragUnder6(0.0);
+        room3Pricing.setKurbeitrag6To15(1.0);
+        room3Pricing.setKurbeitrag16AndOlder(2.1);
+
+        room4Pricing.setKurbeitragUnder6(0.0);
+        room4Pricing.setKurbeitrag6To15(1.0);
+        room4Pricing.setKurbeitrag16AndOlder(2.1);
+
+        // Устанавливаем стоимость за собаку
+        room1Pricing.setDogFeePerNight(10.0);
+        room2Pricing.setDogFeePerNight(10.0);
+        room3Pricing.setDogFeePerNight(10.0);
+        room4Pricing.setDogFeePerNight(10.0);
+
         // Сохраняем объекты RoomPricing в RoomPricingService
         roomPricingService.addRoomPricing(room1Pricing);
         roomPricingService.addRoomPricing(room2Pricing);

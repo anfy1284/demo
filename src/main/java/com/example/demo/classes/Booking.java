@@ -20,6 +20,7 @@ public class Booking {
     private LocalDate date;
     private String description; // description of the booking
     private int duration; // Продолжительность бронирования в днях
+    private int dogs; // Количество собак
 
     public String getRoomId() {
         return room != null ? room.getID() : null;
@@ -31,6 +32,14 @@ public class Booking {
 
     public void setDuration(int duration) {
         this.duration = duration;
+    }
+
+    public int getDogs() {
+        return dogs;
+    }
+
+    public void setDogs(int dogs) {
+        this.dogs = dogs;
     }
 
     public static Booking createEmpty() {

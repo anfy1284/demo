@@ -9,6 +9,11 @@ public class RoomPricing {
     private Map<Period, Map<Integer, Double>> pricing; // Цены в разрезе периода и количества гостей
     private double priceForChildrenUnder3 = 0.0; // Бесплатно для детей до 2 лет включительно
     private double priceForChildren3To5 = 10.0; // Фиксированная цена для детей от 3 до 5 лет
+    private double finalCleaningFeeShortStay; // Стоимость уборки для короткого пребывания (до 3 ночей)
+    private double kurbeitragUnder6 = 0.0; // Курортный сбор для детей до 5 лет включительно
+    private double kurbeitrag6To15 = 1.0; // Курортный сбор для детей от 6 до 15 лет включительно
+    private double kurbeitrag16AndOlder = 2.1; // Курортный сбор для лиц 16 лет и старше
+    private double dogFeePerNight = 10.0; // Стоимость за собаку за ночь
 
     public RoomPricing(String roomId) {
         this.roomId = roomId;
@@ -45,6 +50,46 @@ public class RoomPricing {
 
     public void setPriceForChildren3To5(double priceForChildren3To5) {
         this.priceForChildren3To5 = priceForChildren3To5;
+    }
+
+    public double getFinalCleaningFeeShortStay() {
+        return finalCleaningFeeShortStay;
+    }
+
+    public void setFinalCleaningFeeShortStay(double finalCleaningFeeShortStay) {
+        this.finalCleaningFeeShortStay = finalCleaningFeeShortStay;
+    }
+
+    public double getKurbeitragUnder6() {
+        return kurbeitragUnder6;
+    }
+
+    public void setKurbeitragUnder6(double kurbeitragUnder6) {
+        this.kurbeitragUnder6 = kurbeitragUnder6;
+    }
+
+    public double getKurbeitrag6To15() {
+        return kurbeitrag6To15;
+    }
+
+    public void setKurbeitrag6To15(double kurbeitrag6To15) {
+        this.kurbeitrag6To15 = kurbeitrag6To15;
+    }
+
+    public double getKurbeitrag16AndOlder() {
+        return kurbeitrag16AndOlder;
+    }
+
+    public void setKurbeitrag16AndOlder(double kurbeitrag16AndOlder) {
+        this.kurbeitrag16AndOlder = kurbeitrag16AndOlder;
+    }
+
+    public double getDogFeePerNight() {
+        return dogFeePerNight;
+    }
+
+    public void setDogFeePerNight(double dogFeePerNight) {
+        this.dogFeePerNight = dogFeePerNight;
     }
 
     // Добавить цену для определённого периода и количества гостей
