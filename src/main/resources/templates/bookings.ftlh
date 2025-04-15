@@ -106,6 +106,18 @@
                 font-size: 16px;
             }
         }
+        .booking-id {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .booking-customer {
+            font-size: 14px;
+            color: #333;
+        }
+        .booking-description {
+            font-size: 12px;
+            color: #6c757d;
+        }
     </style>
 </head>
 <body>
@@ -143,7 +155,11 @@
                                     <#assign booking = bookingsMap[date][room.ID]>
                                     <#if booking.startDate == date>
                                         <td rowspan="${booking.duration}">
-                                            <a href="/booking/${booking.ID}">${booking.description}</a>
+                                            <a href="/booking/${booking.ID}">
+                                                <div class="booking-id">${booking.ID}</div>
+                                                <div class="booking-customer">${booking.customerName! 'Unbekannt'}</div>
+                                                <div class="booking-description">${booking.description! ''}</div>
+                                            </a>
                                         </td>
                                     <#else>
                                         <!-- Skip rendering -->

@@ -53,15 +53,22 @@
             background-color: #0056b3;
         }
         @media print {
+            body {
+                background-color: white;
+                box-shadow: none; /* Убираем тень */
+            }
             .print-btn {
                 display: none;
+            }
+            .bill-container {
+                box-shadow: none; /* Убираем тень у контейнера */
             }
         }
     </style>
 </head>
 <body>
     <div class="bill-container">
-        <h1>Buchungsrechnung</h1>
+        <h1>Rechnung</h1>
         <h2>Buchungsdetails</h2>
         <p><strong>Kundenname:</strong> ${booking.customerName}</p>
         <p><strong>Zimmer:</strong> ${booking.room.name}</p>
@@ -82,14 +89,18 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>Unterkunftspreis</td>
-                    <td>${bill.accommodationPrice} €</td>
-                </tr>
-                <tr class="total-row">
-                    <td>Gesamt</td>
-                    <td>${bill.totalPrice} €</td>
-                </tr>
+                <#if bill?has_content>
+                    <#list bill as item>
+                        <tr>
+                            <td>${item.label}</td>
+                            <td>${item.value}</td>
+                        </tr>
+                    </#list>
+                <#else>
+                    <tr>
+                        <td colspan="2">Keine Rechnungsdaten verfügbar</td>
+                    </tr>
+                </#if>
             </tbody>
         </table>
         <button class="print-btn" onclick="window.print()">Rechnung drucken</button>

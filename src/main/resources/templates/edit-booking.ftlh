@@ -79,21 +79,33 @@
         const roomId = document.getElementById('roomId').value;
         const guestCount = document.querySelectorAll('#guestsTable tbody tr').length;
 
+        const guestDatesOfBirth = Array.from(document.querySelectorAll('input[name^="guests["][name$="].dateOfBirth"]'))
+            .map(input => input.value)
+            .filter(date => date); // Убираем пустые значения
+
         if (startDate && endDate && roomId) {
-            const response = await fetch(`/calculate-bill?roomId=` + roomId + `&startDate=` + startDate + `&endDate=` + endDate + `&guestCount=` + guestCount);
+            const response = await fetch(`/calculate-bill?roomId=` + roomId +
+                `&startDate=` + startDate +
+                `&endDate=` + endDate +
+                `&guestCount=` + guestCount +
+                `&guests=` + encodeURIComponent(guestDatesOfBirth.join(',')));
             const billData = await response.json();
 
-            const billTable = document.getElementById('billTable');
-            billTable.innerHTML = `
-                <tr>
-                    <td>Accommodation price (` + guestCount + ` guests)</td>
-                    <td>` + billData.accommodationPrice + ` €</td>
-                </tr>
-                <tr>
-                    <td><strong>Total</strong></td>
-                    <td><strong>` + billData.totalPrice + ` €</strong></td>
-                </tr>
-            `;
+            const billTableBody = document.querySelector('#billTable tbody');
+            billTableBody.innerHTML = ''; // Очищаем таблицу перед добавлением новых строк
+
+            billData.forEach(item => {
+                const row = document.createElement('tr');
+                const labelCell = document.createElement('td');
+                const valueCell = document.createElement('td');
+
+                labelCell.textContent = item.label;
+                valueCell.textContent = item.value;
+
+                row.appendChild(labelCell);
+                row.appendChild(valueCell);
+                billTableBody.appendChild(row);
+            });
         }
     }
 
@@ -117,6 +129,26 @@
     }
 
     document.addEventListener('DOMContentLoaded', calculateBill); // Пересчет прайса при открытии страницы
+
+    async function saveAndPrint(bookingId) {
+        try {
+            const form = document.querySelector('form');
+            const formData = new FormData(form);
+            const response = await fetch(`/booking/` + bookingId, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                window.location.href = `/booking/` + bookingId + `/bill`;
+            } else {
+                alert('Fehler beim Speichern der Buchung vor dem Drucken.');
+            }
+        } catch (error) {
+            console.error('Fehler beim Speichern und Drucken:', error);
+            alert('Ein unerwarteter Fehler ist aufgetreten.');
+        }
+    }
 </script>
 
 <!DOCTYPE html>
@@ -385,17 +417,18 @@
         <div class="bill-container">
             <h2>Rechnung</h2>
             <table id="billTable">
-                <tr>
-                    <td>Unterkunftspreis</td>
-                    <td>0 €</td>
-                </tr>
-                <tr>
-                    <td><strong>Gesamt</strong></td>
-                    <td><strong>0 €</strong></td>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Beschreibung</th>
+                        <th>Betrag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Сюда будут добавляться строки счета -->
+                </tbody>
             </table>
             <#if method == "edit">
-                <button class="print-bill-btn" onclick="window.location.href='/booking/${booking.ID}/bill'">
+                <button class="print-bill-btn" onclick="saveAndPrint('${booking.ID}')">
                     <span class="material-icons">print</span> Rechnung drucken
                 </button>
             </#if>

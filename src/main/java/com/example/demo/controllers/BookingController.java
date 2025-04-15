@@ -299,12 +299,13 @@ public class BookingController {
 
     @GetMapping("/calculate-bill")
     @ResponseBody
-    public Map<String, Object> calculateBill(
+    public List<Map<String, String>> calculateBill(
             @RequestParam("roomId") String roomId,
             @RequestParam("startDate") String startDate,
             @RequestParam("endDate") String endDate,
-            @RequestParam("guestCount") int guestCount) {
-        Map<String, Object> billData = new HashMap<>();
+            @RequestParam("guestCount") int guestCount,
+            @RequestParam(value = "guests", required = false) List<String> guestDatesOfBirth) {
+        List<Map<String, String>> billItems = new ArrayList<>();
         try {
             RoomPricing roomPricing = roomPricingService.getRoomPricing(roomId);
             if (roomPricing == null) {
@@ -320,14 +321,70 @@ public class BookingController {
                 throw new IllegalArgumentException("No pricing available for the given date and guest count.");
             }
 
-            double totalPrice = dailyPrice * days;
+            double accommodationPrice = dailyPrice * days;
 
-            billData.put("accommodationPrice", String.format("%.2f", dailyPrice));
-            billData.put("totalPrice", String.format("%.2f", totalPrice));
+            // Расчет Kurtaxe
+            double touristTaxChildren = 0.0;
+            double touristTaxAdults = 0.0;
+            double taxChildRate = 1.0; // Для детей 6-15 лет
+            double taxAdultRate = 2.10; // Для гостей 16 лет и старше
+            LocalDate today = LocalDate.now();
+
+            if (guestDatesOfBirth != null) {
+                for (String dob : guestDatesOfBirth) {
+                    LocalDate birthDate = LocalDate.parse(dob);
+                    int age = today.getYear() - birthDate.getYear();
+                    if (today.isBefore(birthDate.plusYears(age))) {
+                        age--;
+                    }
+
+                    if (age >= 6 && age <= 15) {
+                        touristTaxChildren += taxChildRate * days;
+                    } else if (age >= 16) {
+                        touristTaxAdults += taxAdultRate * days;
+                    }
+                }
+            }
+
+            // Формируем структуру для отображения, исключая нулевые строки
+            if (accommodationPrice > 0) {
+                billItems.add(Map.of(
+                    "key", "accommodationPrice",
+                    "label", "Unterkunftspreis (" + guestCount + " Gäste)",
+                    "value", String.format("%.2f €", accommodationPrice)
+                ));
+            }
+            if (touristTaxChildren > 0) {
+                billItems.add(Map.of(
+                    "key", "touristTaxChildren",
+                    "label", "Kurtaxe (Kinder 6-15 Jahre)",
+                    "value", String.format("%.2f €", touristTaxChildren)
+                ));
+            }
+            if (touristTaxAdults > 0) {
+                billItems.add(Map.of(
+                    "key", "touristTaxAdults",
+                    "label", "Kurtaxe (ab 16 Jahre)",
+                    "value", String.format("%.2f €", touristTaxAdults)
+                ));
+            }
+
+            // Итоговая строка всегда добавляется
+            double totalPrice = accommodationPrice + touristTaxChildren + touristTaxAdults;
+            billItems.add(Map.of(
+                "key", "totalPrice",
+                "label", "Gesamt",
+                "value", String.format("%.2f €", totalPrice)
+            ));
+
         } catch (Exception e) {
-            billData.put("error", e.getMessage());
+            billItems.add(Map.of(
+                "key", "error",
+                "label", "Fehler",
+                "value", e.getMessage()
+            ));
         }
-        return billData;
+        return billItems;
     }
 
     @GetMapping("/booking/{id}/bill")
@@ -352,14 +409,59 @@ public class BookingController {
                 throw new IllegalArgumentException("No pricing available for the given date and guest count.");
             }
 
-            double totalPrice = dailyPrice * days;
+            double accommodationPrice = dailyPrice * days;
 
-            Map<String, Object> bill = new HashMap<>();
-            bill.put("accommodationPrice", String.format("%.2f", dailyPrice));
-            bill.put("totalPrice", String.format("%.2f", totalPrice));
+            // Расчет Kurtaxe
+            double touristTaxChildren = 0.0;
+            double touristTaxAdults = 0.0;
+            double taxChildRate = 1.0; // Для детей 6-15 лет
+            double taxAdultRate = 2.10; // Для гостей 16 лет и старше
+            LocalDate today = LocalDate.now();
+
+            for (Guest guest : booking.getGuests()) {
+                LocalDate dob = LocalDate.parse(guest.getDateOfBirth());
+                int age = today.getYear() - dob.getYear();
+                if (today.isBefore(dob.plusYears(age))) {
+                    age--;
+                }
+
+                if (age >= 6 && age <= 15) {
+                    touristTaxChildren += taxChildRate * days;
+                } else if (age >= 16) {
+                    touristTaxAdults += taxAdultRate * days;
+                }
+            }
+
+            // Формируем структуру для отображения
+            List<Map<String, String>> billItems = new ArrayList<>();
+            if (accommodationPrice > 0) {
+                billItems.add(Map.of(
+                    "label", "Unterkunftspreis (" + booking.getGuests().size() + " Gäste)",
+                    "value", String.format("%.2f €", accommodationPrice)
+                ));
+            }
+            if (touristTaxChildren > 0) {
+                billItems.add(Map.of(
+                    "label", "Kurtaxe (Kinder 6-15 Jahre)",
+                    "value", String.format("%.2f €", touristTaxChildren)
+                ));
+            }
+            if (touristTaxAdults > 0) {
+                billItems.add(Map.of(
+                    "label", "Kurtaxe (ab 16 Jahre)",
+                    "value", String.format("%.2f €", touristTaxAdults)
+                ));
+            }
+
+            // Итоговая строка всегда добавляется
+            double totalPrice = accommodationPrice + touristTaxChildren + touristTaxAdults;
+            billItems.add(Map.of(
+                "label", "Gesamt",
+                "value", String.format("%.2f €", totalPrice)
+            ));
 
             model.addAttribute("booking", booking);
-            model.addAttribute("bill", bill);
+            model.addAttribute("bill", billItems);
 
             return "bill";
         } catch (Exception e) {
