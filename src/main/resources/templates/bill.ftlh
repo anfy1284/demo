@@ -89,8 +89,28 @@
                 </tr>
             </thead>
             <tbody>
-                <#if bill?has_content>
-                    <#list bill as item>
+                <#if bill?has_content && bill.main?has_content>
+                    <#list bill.main as item>
+                        <tr>
+                            <td>${item.label}</td>
+                            <td>${item.value}</td>
+                        </tr>
+                    </#list>
+                </#if>
+            </tbody>
+        </table>
+
+        <h2>Kurbeitrag</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Beschreibung</th>
+                    <th>Betrag</th>
+                </tr>
+            </thead>
+            <tbody>
+                <#if bill?has_content && bill.kurbeitrag?has_content>
+                    <#list bill.kurbeitrag as item>
                         <tr>
                             <td>${item.label}</td>
                             <td>${item.value}</td>

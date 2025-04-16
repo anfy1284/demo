@@ -131,9 +131,27 @@ public class BookingController {
             if (booking == null) {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
+
+            // Рассчитываем счет для текущей брони
+            Map<String, List<Map<String, String>>> billSections = calculateBill(
+                booking.getRoom().getID(),
+                booking.getStartDate(),
+                booking.getEndDate(),
+                null,
+                booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
+                booking.getDogs(),
+                id,
+                booking.isIncludeBreakfast()
+            );
+
+            // Отладочный вывод для проверки содержимого счета
+            System.out.println("Bill sections: " + billSections);
+
             model.addAttribute("method", "edit");
             model.addAttribute("booking", booking);
             model.addAttribute("rooms", roomService.getAll());
+            model.addAttribute("bill", billSections); // Передаем структуру счета в шаблон
+
             return "edit-booking";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
@@ -303,7 +321,7 @@ public class BookingController {
 
     @GetMapping("/calculate-bill")
     @ResponseBody
-    public List<Map<String, String>> calculateBill(
+    public Map<String, List<Map<String, String>>> calculateBill(
             @RequestParam(value = "roomId", required = false) String roomId,
             @RequestParam(value = "startDate", required = false) String startDate,
             @RequestParam(value = "endDate", required = false) String endDate,
@@ -312,7 +330,9 @@ public class BookingController {
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam(value = "bookingId", required = false) String bookingId,
             @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast) {
+        Map<String, List<Map<String, String>>> billSections = new HashMap<>();
         List<Map<String, String>> billItems = new ArrayList<>();
+        List<Map<String, String>> kurbeitragItems = new ArrayList<>();
         try {
             if (bookingId != null) {
                 Booking booking = bookingService.getById(bookingId);
@@ -390,7 +410,30 @@ public class BookingController {
             double kurbeitrag6To15 = children6To15Count * roomPricing.getKurbeitrag6To15() * days;
             double kurbeitrag16AndOlder = adultGuestCount * roomPricing.getKurbeitrag16AndOlder() * days;
 
-            // Добавляем строки в счет
+            // Add Kurbeitrag items to a separate list
+            if (kurbeitragUnder6 > 0) {
+                kurbeitragItems.add(Map.of(
+                    "key", "kurbeitragUnder6",
+                    "label", "Kurbeitrag (0-5 Jahre)",
+                    "value", String.format("%.2f €", kurbeitragUnder6)
+                ));
+            }
+            if (kurbeitrag6To15 > 0) {
+                kurbeitragItems.add(Map.of(
+                    "key", "kurbeitrag6To15",
+                    "label", "Kurbeitrag (6-15 Jahre)",
+                    "value", String.format("%.2f €", kurbeitrag6To15)
+                ));
+            }
+            if (kurbeitrag16AndOlder > 0) {
+                kurbeitragItems.add(Map.of(
+                    "key", "kurbeitrag16AndOlder",
+                    "label", "Kurbeitrag (16+ Jahre)",
+                    "value", String.format("%.2f €", kurbeitrag16AndOlder)
+                ));
+            }
+
+            // Add other bill items to the main list
             if (accommodationPrice > 0) {
                 billItems.add(Map.of(
                     "key", "accommodationPrice",
@@ -410,27 +453,6 @@ public class BookingController {
                     "key", "childrenUnder3Price",
                     "label", "Kinderpreis (0-2 Jahre, kostenlos)",
                     "value", "0.00 €"
-                ));
-            }
-            if (kurbeitragUnder6 > 0) {
-                billItems.add(Map.of(
-                    "key", "kurbeitragUnder6",
-                    "label", "Kurbeitrag (0-5 Jahre)",
-                    "value", String.format("%.2f €", kurbeitragUnder6)
-                ));
-            }
-            if (kurbeitrag6To15 > 0) {
-                billItems.add(Map.of(
-                    "key", "kurbeitrag6To15",
-                    "label", "Kurbeitrag (6-15 Jahre)",
-                    "value", String.format("%.2f €", kurbeitrag6To15)
-                ));
-            }
-            if (kurbeitrag16AndOlder > 0) {
-                billItems.add(Map.of(
-                    "key", "kurbeitrag16AndOlder",
-                    "label", "Kurbeitrag (16+ Jahre)",
-                    "value", String.format("%.2f €", kurbeitrag16AndOlder)
                 ));
             }
             if (dogFee > 0) {
@@ -491,12 +513,16 @@ public class BookingController {
             }
 
             // Итоговая строка
-            totalPrice += accommodationPrice + children3To5Price + dogFee + kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
+            totalPrice += accommodationPrice + children3To5Price + dogFee;
             billItems.add(Map.of(
                 "key", "totalPrice",
                 "label", "Gesamt",
                 "value", String.format("%.2f €", totalPrice)
             ));
+
+            // Add both sections to the response
+            billSections.put("main", billItems);
+            billSections.put("kurbeitrag", kurbeitragItems);
 
         } catch (Exception e) {
             billItems.add(Map.of(
@@ -505,7 +531,7 @@ public class BookingController {
                 "value", e.getMessage()
             ));
         }
-        return billItems;
+        return billSections;
     }
 
     @GetMapping("/booking/{id}/bill")
@@ -516,8 +542,8 @@ public class BookingController {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
 
-            // Используем данные из calculateBill
-            List<Map<String, String>> billItems = calculateBill(
+            // Calculate the bill for the booking
+            Map<String, List<Map<String, String>>> billSections = calculateBill(
                 booking.getRoom().getID(),
                 booking.getStartDate(),
                 booking.getEndDate(),
@@ -525,11 +551,11 @@ public class BookingController {
                 booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
                 booking.getDogs(),
                 id,
-                booking.isIncludeBreakfast() // Передаем includeBreakfast из бронирования
+                booking.isIncludeBreakfast()
             );
 
             model.addAttribute("booking", booking);
-            model.addAttribute("bill", billItems);
+            model.addAttribute("bill", billSections); // Pass the bill structure to the template
 
             return "bill";
         } catch (Exception e) {

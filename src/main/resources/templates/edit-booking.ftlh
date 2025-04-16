@@ -77,39 +77,61 @@
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
         const roomId = document.getElementById('roomId').value;
-        const guestCount = document.querySelectorAll('#guestsTable tbody tr').length;
-        const dogs = document.getElementById('dogs').checked ? 1 : 0; // Учитываем значение чекбокса
-        const includeBreakfast = document.getElementById('includeBreakfast').checked ? true : false; // Добавлено
-
         const guestDatesOfBirth = Array.from(document.querySelectorAll('input[name^="guests["][name$="].dateOfBirth"]'))
             .map(input => input.value)
-            .filter(date => date); // Убираем пустые значения
+            .filter(date => date); // Remove empty values
+        const dogs = document.getElementById('dogs').checked ? 1 : 0;
+        const includeBreakfast = document.getElementById('includeBreakfast').checked;
 
         if (startDate && endDate && roomId) {
-            const response = await fetch(`/calculate-bill?roomId=` + roomId +
-                `&startDate=` + startDate +
-                `&endDate=` + endDate +
-                `&guestCount=` + guestCount +
-                `&dogs=` + dogs + // Передаем значение собак
-                `&includeBreakfast=` + includeBreakfast + // Передаем параметр
-                `&guests=` + encodeURIComponent(guestDatesOfBirth.join(',')));
-            const billData = await response.json();
+            try {
+                const response = await fetch(`/calculate-bill?roomId=` + roomId +
+                    `&startDate=` + startDate +
+                    `&endDate=` + endDate +
+                    `&guests=` + encodeURIComponent(guestDatesOfBirth.join(',')) +
+                    `&dogs=` + dogs +
+                    `&includeBreakfast=` + includeBreakfast);
+                const billData = await response.json();
 
-            const billTableBody = document.querySelector('#billTable tbody');
-            billTableBody.innerHTML = ''; // Очищаем таблицу перед добавлением новых строк
+                // Update the main bill table
+                const billTableBody = document.querySelector('#billTable tbody');
+                billTableBody.innerHTML = ''; // Clear existing rows
+                if (billData.main) {
+                    billData.main.forEach(item => {
+                        const row = document.createElement('tr');
+                        const labelCell = document.createElement('td');
+                        const valueCell = document.createElement('td');
 
-            billData.forEach(item => {
-                const row = document.createElement('tr');
-                const labelCell = document.createElement('td');
-                const valueCell = document.createElement('td');
+                        labelCell.textContent = item.label;
+                        valueCell.textContent = item.value;
 
-                labelCell.textContent = item.label;
-                valueCell.textContent = item.value;
+                        row.appendChild(labelCell);
+                        row.appendChild(valueCell);
+                        billTableBody.appendChild(row);
+                    });
+                }
 
-                row.appendChild(labelCell);
-                row.appendChild(valueCell);
-                billTableBody.appendChild(row);
-            });
+                // Update the Kurbeitrag table
+                const kurbeitragTableBody = document.querySelector('.bill-container table:nth-of-type(2) tbody');
+                kurbeitragTableBody.innerHTML = ''; // Clear existing rows
+                if (billData.kurbeitrag) {
+                    billData.kurbeitrag.forEach(item => {
+                        const row = document.createElement('tr');
+                        const labelCell = document.createElement('td');
+                        const valueCell = document.createElement('td');
+
+                        labelCell.textContent = item.label;
+                        valueCell.textContent = item.value;
+
+                        row.appendChild(labelCell);
+                        row.appendChild(valueCell);
+                        kurbeitragTableBody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error('Error calculating bill:', error);
+                alert('Ein Fehler ist beim Berechnen der Rechnung aufgetreten.');
+            }
         }
     }
 
@@ -446,6 +468,26 @@
                 </thead>
                 <tbody>
                     <!-- Сюда будут добавляться строки счета -->
+                </tbody>
+            </table>
+
+            <h2>Kurbeitrag</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Beschreibung</th>
+                        <th>Betrag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <#if bill?has_content && bill.kurbeitrag?has_content>
+                        <#list bill.kurbeitrag as item>
+                            <tr>
+                                <td>${item.label}</td>
+                                <td>${item.value}</td>
+                            </tr>
+                        </#list>
+                    </#if>
                 </tbody>
             </table>
             <#if method == "edit">
