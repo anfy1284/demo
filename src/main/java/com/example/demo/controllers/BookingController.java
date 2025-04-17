@@ -256,6 +256,10 @@ public class BookingController {
             }
 
             Booking booking = Booking.createEmpty();
+            if (booking == null) { // Reintroduce null check
+                throw new IllegalArgumentException("Failed to create a new booking instance.");
+            }
+
             booking.setRoom(room);
             booking.setStartDate(date);
             booking.setEndDate(date);
@@ -393,7 +397,7 @@ public class BookingController {
             }
 
             // Рассчитываем стоимость проживания для взрослых
-            Double dailyPriceForAdults = roomPricing.getPrice(start, adultGuestCount);
+            Double dailyPriceForAdults = roomPricing.getPrice(start, adultGuestCount + children6To15Count);
             if (dailyPriceForAdults == null) {
                 throw new IllegalArgumentException("No pricing available for the given date and adult guest count.");
             }
@@ -409,6 +413,8 @@ public class BookingController {
             double kurbeitragUnder6 = childrenUnder3Count * roomPricing.getKurbeitragUnder6() * days;
             double kurbeitrag6To15 = children6To15Count * roomPricing.getKurbeitrag6To15() * days;
             double kurbeitrag16AndOlder = adultGuestCount * roomPricing.getKurbeitrag16AndOlder() * days;
+
+            double totalKurbeitrag = kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
 
             // Add Kurbeitrag items to a separate list
             if (kurbeitragUnder6 > 0) {
@@ -433,6 +439,13 @@ public class BookingController {
                 ));
             }
 
+            // Add total row for Kurbeitrag
+            kurbeitragItems.add(Map.of(
+                "key", "totalKurbeitrag",
+                "label", "Gesamt",
+                "value", String.format("%.2f €", totalKurbeitrag)
+            ));
+
             // Add other bill items to the main list
             if (accommodationPrice > 0) {
                 billItems.add(Map.of(
@@ -448,6 +461,7 @@ public class BookingController {
                     "value", String.format("%.2f €", children3To5Price)
                 ));
             }
+            /*
             if (childrenUnder3Count > 0) {
                 billItems.add(Map.of(
                     "key", "childrenUnder3Price",
@@ -455,6 +469,7 @@ public class BookingController {
                     "value", "0.00 €"
                 ));
             }
+            */
             if (dogFee > 0) {
                 billItems.add(Map.of(
                     "key", "dogFee",
@@ -471,6 +486,7 @@ public class BookingController {
                     "label", "Endreinigung (Kurzaufenthalt)",
                     "value", String.format("%.2f €", finalCleaningFee)
                 ));
+                totalPrice += finalCleaningFee;
             }
 
             // Добавляем стоимость завтраков по категориям

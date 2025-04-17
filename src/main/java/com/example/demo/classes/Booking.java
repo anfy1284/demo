@@ -2,6 +2,7 @@ package com.example.demo.classes;
 
 import java.util.List;
 import java.time.LocalDate;
+import java.util.ArrayList;
 
 import lombok.Data;
 
@@ -53,17 +54,19 @@ public class Booking {
 
     public static Booking createEmpty() {
         try {
-            Booking booking = Booking.class.getDeclaredConstructor().newInstance();
+            Booking booking = new Booking(); // Use the default constructor directly
             for (var field : Booking.class.getDeclaredFields()) {
                 field.setAccessible(true);
                 if (field.getType().equals(String.class)) {
                     field.set(booking, "");
                 } else if (field.getType().equals(int.class)) {
                     field.set(booking, 0);
+                } else if (field.getType().equals(boolean.class)) {
+                    field.set(booking, false); // Initialize boolean fields to false
                 } else if (field.getType().equals(LocalDate.class)) {
-                    field.set(booking, LocalDate.MIN);
+                    field.set(booking, null); // Set to null instead of LocalDate.MIN
                 } else if (field.getType().equals(List.class)) {
-                    field.set(booking, List.of());
+                    field.set(booking, new ArrayList<>()); // Use a mutable list
                 } else {
                     field.set(booking, null);
                 }

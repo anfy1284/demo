@@ -97,13 +97,17 @@
                 const billTableBody = document.querySelector('#billTable tbody');
                 billTableBody.innerHTML = ''; // Clear existing rows
                 if (billData.main) {
-                    billData.main.forEach(item => {
+                    billData.main.forEach((item, index) => {
                         const row = document.createElement('tr');
-                        const labelCell = document.createElement('td');
-                        const valueCell = document.createElement('td');
+                        const labelCell = document.createElement(index === billData.main.length - 1 ? 'th' : 'td');
+                        const valueCell = document.createElement(index === billData.main.length - 1 ? 'th' : 'td');
 
                         labelCell.textContent = item.label;
                         valueCell.textContent = item.value;
+
+                        // Align text to the left for the last row
+                        labelCell.style.textAlign = 'left';
+                        valueCell.style.textAlign = 'right';
 
                         row.appendChild(labelCell);
                         row.appendChild(valueCell);
@@ -115,13 +119,17 @@
                 const kurbeitragTableBody = document.querySelector('.bill-container table:nth-of-type(2) tbody');
                 kurbeitragTableBody.innerHTML = ''; // Clear existing rows
                 if (billData.kurbeitrag) {
-                    billData.kurbeitrag.forEach(item => {
+                    billData.kurbeitrag.forEach((item, index) => {
                         const row = document.createElement('tr');
-                        const labelCell = document.createElement('td');
-                        const valueCell = document.createElement('td');
+                        const labelCell = document.createElement(index === billData.kurbeitrag.length - 1 ? 'th' : 'td');
+                        const valueCell = document.createElement(index === billData.kurbeitrag.length - 1 ? 'th' : 'td');
 
                         labelCell.textContent = item.label;
                         valueCell.textContent = item.value;
+
+                        // Align text to the left for the last row
+                        labelCell.style.textAlign = 'left';
+                        valueCell.style.textAlign = 'right';
 
                         row.appendChild(labelCell);
                         row.appendChild(valueCell);

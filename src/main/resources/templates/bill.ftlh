@@ -64,6 +64,13 @@
                 box-shadow: none; /* Убираем тень у контейнера */
             }
         }
+        /* Column widths */
+        .column-description {
+            width: 75%;
+        }
+        .column-amount {
+            width: 15%;
+        }
     </style>
 </head>
 <body>
@@ -84,16 +91,16 @@
         <table>
             <thead>
                 <tr>
-                    <th>Beschreibung</th>
-                    <th>Betrag</th>
+                    <th class="column-description">Beschreibung</th>
+                    <th class="column-amount">Betrag</th>
                 </tr>
             </thead>
             <tbody>
                 <#if bill?has_content && bill.main?has_content>
                     <#list bill.main as item>
                         <tr>
-                            <td>${item.label}</td>
-                            <td>${item.value}</td>
+                            <td class="column-description">${item.label}</td>
+                            <td class="column-amount">${item.value}</td>
                         </tr>
                     </#list>
                 </#if>
@@ -104,16 +111,16 @@
         <table>
             <thead>
                 <tr>
-                    <th>Beschreibung</th>
-                    <th>Betrag</th>
+                    <th class="column-description">Beschreibung</th>
+                    <th class="column-amount">Betrag</th>
                 </tr>
             </thead>
             <tbody>
                 <#if bill?has_content && bill.kurbeitrag?has_content>
                     <#list bill.kurbeitrag as item>
                         <tr>
-                            <td>${item.label}</td>
-                            <td>${item.value}</td>
+                            <td class="column-description">${item.label}</td>
+                            <td class="column-amount">${item.value}</td>
                         </tr>
                     </#list>
                 </#if>
