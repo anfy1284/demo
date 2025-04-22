@@ -169,6 +169,8 @@ public class BookingController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
+            @RequestParam(value = "customerAddress", required = false) String customerAddress,
+            @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment,
             @RequestParam Map<String, String> allParams,
             Model model) {
         try {
@@ -211,6 +213,8 @@ public class BookingController {
             booking.setDescription(description);
             booking.setDogs(dogs); // Устанавливаем количество собак
             booking.setIncludeBreakfast(includeBreakfast); // Устанавливаем флаг завтраков
+            booking.setCustomerAddress(customerAddress); // Устанавливаем адрес клиента
+            booking.setPrepayment(prepayment);
 
             // Process guests
             List<Guest> guests = new ArrayList<>();
@@ -254,12 +258,10 @@ public class BookingController {
             if (room == null) {
                 throw new IllegalArgumentException("Room not found for ID: " + roomId);
             }
-
             Booking booking = Booking.createEmpty();
             if (booking == null) { // Reintroduce null check
                 throw new IllegalArgumentException("Failed to create a new booking instance.");
             }
-
             booking.setRoom(room);
             booking.setStartDate(date);
             booking.setEndDate(date);
@@ -277,7 +279,6 @@ public class BookingController {
                     model.addAttribute("bill", bill);
                 }
             }
-
             model.addAttribute("method", "create");
             model.addAttribute("booking", booking);
             model.addAttribute("rooms", roomService.getAll());
@@ -294,13 +295,13 @@ public class BookingController {
             @RequestParam("roomId") String roomId,
             @RequestParam("customerName") String customerName,
             @RequestParam("description") String description,
+            @RequestParam(value = "customerAddress", required = false) String customerAddress,
             Model model) {
         try {
             Room room = roomService.getById(roomId);
             if (room == null) {
                 throw new IllegalArgumentException("Room not found for ID: " + roomId);
             }
-
             Booking booking = new Booking();
             booking.setStartDate(date);
             booking.setEndDate(date); // Assuming single-day booking for simplicity
@@ -308,8 +309,8 @@ public class BookingController {
             booking.setDescription(description);
             booking.setRoom(room);
             booking.setStatus("booked");
+            booking.setCustomerAddress(customerAddress); // Set customer address
             bookingService.add(booking);
-
             return "redirect:/booking/" + booking.getID();
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
@@ -338,6 +339,14 @@ public class BookingController {
         List<Map<String, String>> billItems = new ArrayList<>();
         List<Map<String, String>> kurbeitragItems = new ArrayList<>();
         try {
+            double prepayment = 0.0;
+            if (bookingId != null) {
+                Booking booking = bookingService.getById(bookingId);
+                if (booking != null) {
+                    prepayment = booking.getPrepayment(); // Получаем предоплату из бронирования
+                }
+            }
+
             if (bookingId != null) {
                 Booking booking = bookingService.getById(bookingId);
                 if (booking == null) {
@@ -369,7 +378,6 @@ public class BookingController {
             double priceForChildren3To5 = roomPricing.getPriceForChildren3To5();
             double priceForChildrenUnder3 = roomPricing.getPriceForChildrenUnder3();
             double totalPrice = 0.0; // Initialize totalPrice
-
             LocalDate today = LocalDate.now();
             int adultGuestCount = 0;
             int children3To5Count = 0;
@@ -383,7 +391,6 @@ public class BookingController {
                     if (today.isBefore(birthDate.plusYears(age))) {
                         age--;
                     }
-
                     if (age <= 2) {
                         childrenUnder3Count++;
                     } else if (age >= 3 && age <= 5) {
@@ -413,7 +420,6 @@ public class BookingController {
             double kurbeitragUnder6 = childrenUnder3Count * roomPricing.getKurbeitragUnder6() * days;
             double kurbeitrag6To15 = children6To15Count * roomPricing.getKurbeitrag6To15() * days;
             double kurbeitrag16AndOlder = adultGuestCount * roomPricing.getKurbeitrag16AndOlder() * days;
-
             double totalKurbeitrag = kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
 
             // Add Kurbeitrag items to a separate list
@@ -524,17 +530,29 @@ public class BookingController {
                         "value", String.format("%.2f €", breakfastPrice14AndOlder)
                     ));
                 }
-
                 totalPrice += breakfastPriceUnder3 + breakfastPrice3To5 + breakfastPrice6To13 + breakfastPrice14AndOlder;
             }
 
             // Итоговая строка
             totalPrice += accommodationPrice + children3To5Price + dogFee;
+
+            // Вычитаем предоплату
+            totalPrice -= prepayment;
+
             billItems.add(Map.of(
                 "key", "totalPrice",
                 "label", "Gesamt",
                 "value", String.format("%.2f €", totalPrice)
             ));
+
+            // Добавляем предоплату в счет
+            // if (prepayment > 0) {
+            //     billItems.add(Map.of(
+            //         "key", "prepayment",
+            //         "label", "Anzahlung",
+            //         "value", String.format("-%.2f €", prepayment)
+            //     ));
+            // }
 
             // Add both sections to the response
             billSections.put("main", billItems);
@@ -572,12 +590,10 @@ public class BookingController {
 
             model.addAttribute("booking", booking);
             model.addAttribute("bill", billSections); // Pass the bill structure to the template
-
             return "bill";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
             return "error";
         }
     }
-
 }

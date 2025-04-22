@@ -1,4 +1,6 @@
 <script>
+    const enableAddressSuggestions = false; // Установите true для включения автоподсказок
+
     async function searchGuests(input, index) {
         const query = input.value;
         if (query.length > 1) {
@@ -136,6 +138,8 @@
                         kurbeitragTableBody.appendChild(row);
                     });
                 }
+
+                updateTotalSum(); // Обновляем общую сумму после обновления данных счета
             } catch (error) {
                 console.error('Error calculating bill:', error);
                 alert('Ein Fehler ist beim Berechnen der Rechnung aufgetreten.');
@@ -183,6 +187,186 @@
             alert('Ein unerwarteter Fehler ist aufgetreten.');
         }
     }
+
+    let selectedSuggestionIndex = -1;
+
+    async function fetchAddressSuggestions(query) {
+        if (!enableAddressSuggestions) return; // Отключаем функционал, если настройка выключена
+
+        if (query.length < 2) {
+            clearSuggestions();
+            return;
+        }
+
+        showLoadingIndicator(true);
+
+        try {
+            const response = await fetch('/address/parse', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query })
+            });
+
+            if (!response.ok) {
+                console.error('Failed to fetch address suggestions:', response.statusText);
+                clearSuggestions();
+                return;
+            }
+
+            const suggestions = await response.json();
+            updateSuggestionsList(suggestions);
+        } catch (error) {
+            console.error('Error fetching address suggestions:', error);
+        } finally {
+            showLoadingIndicator(false);
+        }
+    }
+
+    function updateSuggestionsList(suggestions) {
+        const suggestionsList = document.getElementById('addressSuggestions');
+        suggestionsList.innerHTML = '';
+
+        if (suggestions.length === 0) {
+            suggestionsList.style.display = 'none'; // Скрываем список, если нет предложений
+            return;
+        }
+
+        suggestionsList.style.display = 'block'; // Показываем список, если есть предложения
+
+        suggestions.forEach((suggestion, index) => {
+            const li = document.createElement('li');
+            li.textContent = suggestion.formattedAddress; // Используем отформатированный адрес
+            li.dataset.value = suggestion.formattedAddress;
+            li.className = 'suggestion-item';
+            li.onclick = () => selectSuggestion(suggestion.formattedAddress);
+            li.onmouseenter = () => highlightSuggestion(index);
+            suggestionsList.appendChild(li);
+        });
+
+        selectedSuggestionIndex = -1;
+        if (suggestions.length > 0) {
+            highlightSuggestion(0); // Выделяем первый элемент
+        }
+    }
+
+    function selectSuggestion(value) {
+        const input = document.getElementById('customerAddress');
+        input.value = value;
+        clearSuggestions();
+    }
+
+    function highlightSuggestion(index) {
+        const suggestionsList = document.getElementById('addressSuggestions');
+        const items = suggestionsList.querySelectorAll('.suggestion-item');
+        items.forEach((item, i) => {
+            item.classList.toggle('highlighted', i === index);
+        });
+        selectedSuggestionIndex = index;
+    }
+
+    function clearSuggestions() {
+        const suggestionsList = document.getElementById('addressSuggestions');
+        suggestionsList.innerHTML = '';
+        suggestionsList.style.display = 'none'; // Скрываем список при очистке
+        selectedSuggestionIndex = -1;
+    }
+
+    function showLoadingIndicator(show) {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        loadingIndicator.style.display = show ? 'block' : 'none';
+    }
+
+    document.getElementById('customerAddress').addEventListener('keydown', (event) => {
+        const suggestionsList = document.getElementById('addressSuggestions');
+        const items = suggestionsList.querySelectorAll('.suggestion-item');
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            if (selectedSuggestionIndex < items.length - 1) {
+                highlightSuggestion(selectedSuggestionIndex + 1);
+            } else if (selectedSuggestionIndex === -1 && items.length > 0) {
+                highlightSuggestion(0); // Выделяем первый элемент, если ничего не выделено
+            }
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (selectedSuggestionIndex > 0) {
+                highlightSuggestion(selectedSuggestionIndex - 1);
+            }
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            if (selectedSuggestionIndex >= 0) {
+                selectSuggestion(items[selectedSuggestionIndex].dataset.value);
+            }
+        } else if (event.key === 'Escape') {
+            clearSuggestions();
+        }
+    });
+
+    function updateTotalSum() {
+        const billTable = document.querySelector('#billTable tbody');
+        const kurbeitragTable = document.querySelector('.bill-container table:nth-of-type(2) tbody');
+        const totalTableBody = document.querySelector('.bill-container table:nth-of-type(3) tbody');
+
+        let billTotal = 0;
+        let kurbeitragTotal = 0;
+
+        // Calculate total for Rechnung
+        billTable.querySelectorAll('td:last-child, th:last-child').forEach(cell => {
+            const value = parseFloat(cell.textContent.replace('€', '').trim());
+            if (!isNaN(value)) {
+                billTotal += value;
+            }
+        });
+
+        // Calculate total for Kurbeitrag
+        kurbeitragTable.querySelectorAll('td:last-child, th:last-child').forEach(cell => {
+            const value = parseFloat(cell.textContent.replace('€', '').trim());
+            if (!isNaN(value)) {
+                kurbeitragTotal += value;
+            }
+        });
+
+        // Get prepayment value
+        const prepaymentValue = parseFloat(document.getElementById('prepayment').value) || 0;
+
+        // Clear existing rows in the total table
+        totalTableBody.innerHTML = '';
+
+        // Add prepayment row
+        const prepaymentRow = document.createElement('tr');
+        const prepaymentLabelCell = document.createElement('td');
+        const prepaymentValueCell = document.createElement('td');
+
+        prepaymentLabelCell.textContent = 'Anzahlung';
+        prepaymentValueCell.textContent = prepaymentValue.toFixed(2) + ' €';
+
+        prepaymentLabelCell.className = 'column-description';
+        prepaymentValueCell.className = 'column-amount';
+
+        prepaymentRow.appendChild(prepaymentLabelCell);
+        prepaymentRow.appendChild(prepaymentValueCell);
+        totalTableBody.appendChild(prepaymentRow);
+
+        // Add total sum row
+        const totalRow = document.createElement('tr');
+        const labelCell = document.createElement('th');
+        const valueCell = document.createElement('th');
+
+        labelCell.textContent = 'Summe insgesamt';
+        valueCell.textContent = (billTotal + kurbeitragTotal - prepaymentValue).toFixed(2) + ' €';
+
+        labelCell.style.textAlign = 'left';
+        valueCell.style.textAlign = 'right';
+
+        totalRow.appendChild(labelCell);
+        totalRow.appendChild(valueCell);
+        totalTableBody.appendChild(totalRow);
+    }
+
+    // Call updateTotalSum after bill data is updated
+    document.addEventListener('DOMContentLoaded', () => {
+        updateTotalSum();
+    });
 </script>
 
 <!DOCTYPE html>
@@ -375,6 +559,61 @@
                 gap: 10px;
             }
         }
+
+        .suggestions-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border: 1px solid #ccc;
+            max-height: 150px;
+            overflow-y: auto;
+            position: absolute;
+            background: white;
+            z-index: 1000;
+            width: calc(100% - 2px); /* Совпадает с шириной поля ввода */
+            box-sizing: border-box;
+            display: none; /* Скрываем список по умолчанию */
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .suggestion-item.highlighted {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .loading-indicator {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #555;
+        }
+
+        #totalTable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        #totalTable th, #totalTable td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        #totalTable th {
+            background-color: #f4f4f4;
+            font-weight: bold;
+        }
+        #totalTable .column-description {
+            text-align: left;
+        }
+        #totalTable .column-amount {
+            text-align: right;
+            width: 90px;
+        }
     </style>
 </head>
 <body>
@@ -400,11 +639,26 @@
                 <label for="customerName">Kundenname:</label>
                 <input type="text" id="customerName" name="customerName" value="${booking.customerName}" required>
 
+                <label for="customerAddress">Adresse des Kunden:</label>
+                <div style="position: relative;">
+                    <input type="text" id="customerAddress" name="customerAddress" 
+                           value="<#if booking.customerAddress??>${booking.customerAddress}<#else></#if>" 
+                           placeholder="Adresse eingeben" oninput="fetchAddressSuggestions(this.value)" autocomplete="off" required>
+                    <div id="loadingIndicator" class="loading-indicator" style="display: none;">Laden...</div>
+                    <ul id="addressSuggestions" class="suggestions-list"></ul>
+                </div>
+
                 <label for="startDate">Anfangsdatum:</label>
                 <input type="date" id="startDate" name="startDate" value="${booking.startDate}" onchange="calculateBill()" required>
 
                 <label for="endDate">Enddatum:</label>
                 <input type="date" id="endDate" name="endDate" value="${booking.endDate}" onchange="calculateBill()" required>
+
+                <label for="prepayment">Anzahlung:</label>
+                <input type="text" id="prepayment" name="prepayment" 
+                       value="<#if booking.prepayment??>${booking.prepayment}<#else>0</#if>" 
+                       inputmode="decimal" onchange="calculateBill()" required 
+                       style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
 
                 <label for="description">Beschreibung:</label>
                 <textarea id="description" name="description">${booking.description}</textarea>
@@ -466,12 +720,10 @@
             </form>
         </div>
         <div class="bill-container">
-            <h2>Rechnung</h2>
             <table id="billTable">
                 <thead>
                     <tr>
-                        <th>Beschreibung</th>
-                        <th>Betrag</th>
+                        <th colspan="2" class="column-description">Rechnung</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -479,12 +731,10 @@
                 </tbody>
             </table>
 
-            <h2>Kurbeitrag</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Beschreibung</th>
-                        <th>Betrag</th>
+                        <th colspan="2" class="column-description">Kurbeitrag</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -496,6 +746,32 @@
                             </tr>
                         </#list>
                     </#if>
+                </tbody>
+            </table>
+
+            <table id="totalTable">
+                <thead>
+                    <tr>
+                        <th colspan="2" class="column-description">Gesamt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <#if bill?has_content && bill.total?has_content>
+                        <#list bill.total as item>
+                            <tr>
+                                <td class="column-description">${item.label}</td>
+                                <td class="column-amount">${item.value}</td>
+                            </tr>
+                        </#list>
+                    </#if>
+                    <tr>
+                        <td class="column-description">Anzahlung</td>
+                        <td class="column-amount">${booking.prepayment}</td>
+                    </tr>
+                    <tr>
+                        <th class="column-description">Summe insgesamt</th>
+                        <th class="column-amount" id="totalSum">0.00 €</th>
+                    </tr>
                 </tbody>
             </table>
             <#if method == "edit">

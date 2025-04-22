@@ -23,6 +23,8 @@ public class Booking {
     private int duration; // Продолжительность бронирования в днях
     private int dogs; // Количество собак
     private boolean includeBreakfast; // Учитывать завтраки
+    private String customerAddress; // Address of the customer
+    private double prepayment; // Поле для хранения предоплаты
 
     public String getRoomId() {
         return room != null ? room.getID() : null;
@@ -52,6 +54,22 @@ public class Booking {
         this.includeBreakfast = includeBreakfast;
     }
 
+    public String getCustomerAddress() {
+        return customerAddress;
+    }
+
+    public void setCustomerAddress(String customerAddress) {
+        this.customerAddress = customerAddress;
+    }
+
+    public double getPrepayment() {
+        return prepayment;
+    }
+
+    public void setPrepayment(double prepayment) {
+        this.prepayment = prepayment;
+    }
+
     public static Booking createEmpty() {
         try {
             Booking booking = new Booking(); // Use the default constructor directly
@@ -67,6 +85,8 @@ public class Booking {
                     field.set(booking, null); // Set to null instead of LocalDate.MIN
                 } else if (field.getType().equals(List.class)) {
                     field.set(booking, new ArrayList<>()); // Use a mutable list
+                } else if (field.getType().equals(double.class)) {
+                    field.set(booking, 0.0); // Initialize double fields to 0.0
                 } else {
                     field.set(booking, null);
                 }

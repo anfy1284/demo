@@ -24,7 +24,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
+            margin-bottom: 15px;
         }
         table th, table td {
             border: 1px solid #ddd;
@@ -33,43 +33,23 @@
         }
         table th {
             background-color: #f4f4f4;
-        }
-        .total-row td {
             font-weight: bold;
         }
-        .print-btn {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: center;
-            font-size: 16px;
+        .column-description {
+            text-align: left;
         }
-        .print-btn:hover {
-            background-color: #0056b3;
+        .column-amount {
+            text-align: right;
+            width: 90px;
         }
         @media print {
             body {
                 background-color: white;
-                box-shadow: none; /* Убираем тень */
-            }
-            .print-btn {
-                display: none;
+                box-shadow: none;
             }
             .bill-container {
-                box-shadow: none; /* Убираем тень у контейнера */
+                box-shadow: none;
             }
-        }
-        /* Column widths */
-        .column-description {
-            width: 75%;
-        }
-        .column-amount {
-            width: 15%;
         }
     </style>
 </head>
@@ -87,12 +67,12 @@
                 <li>${guest.name} (${guest.dateOfBirth})</li>
             </#list>
         </ul>
-        <h2>Rechnungsübersicht</h2>
-        <table>
+
+        <h2>Rechnung</h2>
+        <table id="billTable">
             <thead>
                 <tr>
-                    <th class="column-description">Beschreibung</th>
-                    <th class="column-amount">Betrag</th>
+                    <th colspan="2" class="column-description">Rechnung</th>
                 </tr>
             </thead>
             <tbody>
@@ -107,12 +87,10 @@
             </tbody>
         </table>
 
-        <h2>Kurbeitrag</h2>
         <table>
             <thead>
                 <tr>
-                    <th class="column-description">Beschreibung</th>
-                    <th class="column-amount">Betrag</th>
+                    <th colspan="2" class="column-description">Kurbeitrag</th>
                 </tr>
             </thead>
             <tbody>
@@ -126,7 +104,46 @@
                 </#if>
             </tbody>
         </table>
-        <button class="print-btn" onclick="window.print()">Rechnung drucken</button>
+
+        <table id="totalTable">
+            <thead>
+                <tr>
+                    <th colspan="2" class="column-description">Gesamt</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="column-description">Anzahlung</td>
+                    <td class="column-amount">
+                        <#if booking.prepayment??>
+                            ${booking.prepayment}
+                        <#else>
+                            0.00 €
+                        </#if>
+                    </td>
+                </tr>
+                <tr>
+                    <th class="column-description">Summe insgesamt</th>
+                    <th class="column-amount">
+                        <#assign mainTotal = 0>
+                        <#if bill?has_content && bill.main?has_content>
+                            <#list bill.main as item>
+                                <#assign mainTotal = mainTotal + (item.value?replace(",", ".")?replace("€", "")?trim?number) />
+                            </#list>
+                        </#if>
+                        <#assign kurbeitragTotal = 0>
+                        <#if bill?has_content && bill.kurbeitrag?has_content>
+                            <#list bill.kurbeitrag as item>
+                                <#assign kurbeitragTotal = kurbeitragTotal + (item.value?replace(",", ".")?replace("€", "")?trim?number) />
+                            </#list>
+                        </#if>
+                        <#assign prepayment = booking.prepayment?number!0>
+                        <#assign totalSum = mainTotal + kurbeitragTotal - prepayment>
+                        ${totalSum?string["#.00"]} €
+                    </th>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </body>
 </html>
