@@ -84,6 +84,7 @@
             .filter(date => date); // Remove empty values
         const dogs = document.getElementById('dogs').checked ? 1 : 0;
         const includeBreakfast = document.getElementById('includeBreakfast').checked;
+        const prepayment = document.getElementById('prepayment').value || 0;
 
         if (startDate && endDate && roomId) {
             try {
@@ -92,7 +93,8 @@
                     `&endDate=` + endDate +
                     `&guests=` + encodeURIComponent(guestDatesOfBirth.join(',')) +
                     `&dogs=` + dogs +
-                    `&includeBreakfast=` + includeBreakfast);
+                    `&includeBreakfast=` + includeBreakfast +
+                    `&prepayment=` + prepayment);
                 const billData = await response.json();
 
                 // Update the main bill table
@@ -107,7 +109,6 @@
                         labelCell.textContent = item.label;
                         valueCell.textContent = item.value;
 
-                        // Align text to the left for the last row
                         labelCell.style.textAlign = 'left';
                         valueCell.style.textAlign = 'right';
 
@@ -129,7 +130,6 @@
                         labelCell.textContent = item.label;
                         valueCell.textContent = item.value;
 
-                        // Align text to the left for the last row
                         labelCell.style.textAlign = 'left';
                         valueCell.style.textAlign = 'right';
 
@@ -139,13 +139,34 @@
                     });
                 }
 
-                updateTotalSum(); // Обновляем общую сумму после обновления данных счета
+                // Update the Gesamt table
+                const totalTableBody = document.querySelector('#totalTable tbody');
+                totalTableBody.innerHTML = ''; // Clear existing rows
+                if (billData.gesamt) {
+                    billData.gesamt.forEach(item => {
+                        const row = document.createElement('tr');
+                        const labelCell = document.createElement('td');
+                        const valueCell = document.createElement('td');
+
+                        labelCell.textContent = item.label;
+                        valueCell.textContent = item.value;
+
+                        labelCell.className = 'column-description';
+                        valueCell.className = 'column-amount';
+
+                        row.appendChild(labelCell);
+                        row.appendChild(valueCell);
+                        totalTableBody.appendChild(row);
+                    });
+                }
             } catch (error) {
                 console.error('Error calculating bill:', error);
                 alert('Ein Fehler ist beim Berechnen der Rechnung aufgetreten.');
             }
         }
     }
+
+    document.getElementById('prepayment').addEventListener('change', calculateBill); // Вызываем calculateBill при изменении предоплаты
 
     function validateForm() {
         const startDate = document.getElementById('startDate').value;
@@ -302,71 +323,10 @@
         }
     });
 
-    function updateTotalSum() {
-        const billTable = document.querySelector('#billTable tbody');
-        const kurbeitragTable = document.querySelector('.bill-container table:nth-of-type(2) tbody');
-        const totalTableBody = document.querySelector('.bill-container table:nth-of-type(3) tbody');
-
-        let billTotal = 0;
-        let kurbeitragTotal = 0;
-
-        // Calculate total for Rechnung
-        billTable.querySelectorAll('td:last-child, th:last-child').forEach(cell => {
-            const value = parseFloat(cell.textContent.replace('€', '').trim());
-            if (!isNaN(value)) {
-                billTotal += value;
-            }
-        });
-
-        // Calculate total for Kurbeitrag
-        kurbeitragTable.querySelectorAll('td:last-child, th:last-child').forEach(cell => {
-            const value = parseFloat(cell.textContent.replace('€', '').trim());
-            if (!isNaN(value)) {
-                kurbeitragTotal += value;
-            }
-        });
-
-        // Get prepayment value
-        const prepaymentValue = parseFloat(document.getElementById('prepayment').value) || 0;
-
-        // Clear existing rows in the total table
-        totalTableBody.innerHTML = '';
-
-        // Add prepayment row
-        const prepaymentRow = document.createElement('tr');
-        const prepaymentLabelCell = document.createElement('td');
-        const prepaymentValueCell = document.createElement('td');
-
-        prepaymentLabelCell.textContent = 'Anzahlung';
-        prepaymentValueCell.textContent = prepaymentValue.toFixed(2) + ' €';
-
-        prepaymentLabelCell.className = 'column-description';
-        prepaymentValueCell.className = 'column-amount';
-
-        prepaymentRow.appendChild(prepaymentLabelCell);
-        prepaymentRow.appendChild(prepaymentValueCell);
-        totalTableBody.appendChild(prepaymentRow);
-
-        // Add total sum row
-        const totalRow = document.createElement('tr');
-        const labelCell = document.createElement('th');
-        const valueCell = document.createElement('th');
-
-        labelCell.textContent = 'Summe insgesamt';
-        valueCell.textContent = (billTotal + kurbeitragTotal - prepaymentValue).toFixed(2) + ' €';
-
-        labelCell.style.textAlign = 'left';
-        valueCell.style.textAlign = 'right';
-
-        totalRow.appendChild(labelCell);
-        totalRow.appendChild(valueCell);
-        totalTableBody.appendChild(totalRow);
-    }
-
-    // Call updateTotalSum after bill data is updated
-    document.addEventListener('DOMContentLoaded', () => {
-        updateTotalSum();
+    document.addEventListener('DOMContentLoaded', async () => {
+        await calculateBill(); // Пересчитываем прайс при загрузке страницы
     });
+
 </script>
 
 <!DOCTYPE html>
@@ -756,22 +716,14 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <#if bill?has_content && bill.total?has_content>
-                        <#list bill.total as item>
+                    <#if bill?has_content && bill.gesamt?has_content>
+                        <#list bill.gesamt as item>
                             <tr>
                                 <td class="column-description">${item.label}</td>
                                 <td class="column-amount">${item.value}</td>
                             </tr>
                         </#list>
                     </#if>
-                    <tr>
-                        <td class="column-description">Anzahlung</td>
-                        <td class="column-amount">${booking.prepayment}</td>
-                    </tr>
-                    <tr>
-                        <th class="column-description">Summe insgesamt</th>
-                        <th class="column-amount" id="totalSum">0.00 €</th>
-                    </tr>
                 </tbody>
             </table>
             <#if method == "edit">

@@ -112,36 +112,14 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td class="column-description">Anzahlung</td>
-                    <td class="column-amount">
-                        <#if booking.prepayment??>
-                            ${booking.prepayment}
-                        <#else>
-                            0.00 €
-                        </#if>
-                    </td>
-                </tr>
-                <tr>
-                    <th class="column-description">Summe insgesamt</th>
-                    <th class="column-amount">
-                        <#assign mainTotal = 0>
-                        <#if bill?has_content && bill.main?has_content>
-                            <#list bill.main as item>
-                                <#assign mainTotal = mainTotal + (item.value?replace(",", ".")?replace("€", "")?trim?number) />
-                            </#list>
-                        </#if>
-                        <#assign kurbeitragTotal = 0>
-                        <#if bill?has_content && bill.kurbeitrag?has_content>
-                            <#list bill.kurbeitrag as item>
-                                <#assign kurbeitragTotal = kurbeitragTotal + (item.value?replace(",", ".")?replace("€", "")?trim?number) />
-                            </#list>
-                        </#if>
-                        <#assign prepayment = booking.prepayment?number!0>
-                        <#assign totalSum = mainTotal + kurbeitragTotal - prepayment>
-                        ${totalSum?string["#.00"]} €
-                    </th>
-                </tr>
+                <#if bill?has_content && bill.gesamt?has_content>
+                    <#list bill.gesamt as item>
+                        <tr>
+                            <td class="column-description">${item.label}</td>
+                            <td class="column-amount">${item.value}</td>
+                        </tr>
+                    </#list>
+                </#if>
             </tbody>
         </table>
     </div>

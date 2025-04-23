@@ -137,11 +137,12 @@ public class BookingController {
                 booking.getRoom().getID(),
                 booking.getStartDate(),
                 booking.getEndDate(),
-                null,
+                (Integer) null,
                 booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
                 booking.getDogs(),
                 id,
-                booking.isIncludeBreakfast()
+                booking.isIncludeBreakfast(),
+                0.0 // Adding prepayment as the last argument
             );
 
             // Отладочный вывод для проверки содержимого счета
@@ -334,16 +335,18 @@ public class BookingController {
             @RequestParam(value = "guests", required = false) List<String> guestDatesOfBirth,
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam(value = "bookingId", required = false) String bookingId,
-            @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast) {
+            @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
+            @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment) {
         Map<String, List<Map<String, String>>> billSections = new HashMap<>();
         List<Map<String, String>> billItems = new ArrayList<>();
         List<Map<String, String>> kurbeitragItems = new ArrayList<>();
+        List<Map<String, String>> gesamtItems = new ArrayList<>();
         try {
-            double prepayment = 0.0;
-            if (bookingId != null) {
+            // Учитываем предоплату из параметра, если она передана
+            if (bookingId != null && prepayment == 0.0) {
                 Booking booking = bookingService.getById(bookingId);
                 if (booking != null) {
-                    prepayment = booking.getPrepayment(); // Получаем предоплату из бронирования
+                    prepayment = booking.getPrepayment();
                 }
             }
 
@@ -448,7 +451,7 @@ public class BookingController {
             // Add total row for Kurbeitrag
             kurbeitragItems.add(Map.of(
                 "key", "totalKurbeitrag",
-                "label", "Gesamt",
+                "label", "Gesamt1",
                 "value", String.format("%.2f €", totalKurbeitrag)
             ));
 
@@ -537,11 +540,11 @@ public class BookingController {
             totalPrice += accommodationPrice + children3To5Price + dogFee;
 
             // Вычитаем предоплату
-            totalPrice -= prepayment;
+            // totalPrice -= prepayment;
 
             billItems.add(Map.of(
                 "key", "totalPrice",
-                "label", "Gesamt",
+                "label", "Gesamt2",
                 "value", String.format("%.2f €", totalPrice)
             ));
 
@@ -554,9 +557,35 @@ public class BookingController {
             //     ));
             // }
 
-            // Add both sections to the response
+            // // Calculate total for "Gesamt" table
+            // double mainTotal = billItems.stream()
+            //     .filter(item -> !item.get("key").equals("error"))
+            //     .mapToDouble(item -> Double.parseDouble(item.get("value").replace("€", "").replace(",", ".").trim()))
+            //     .sum();
+
+            double kurbeitragTotal = kurbeitragItems.stream()
+                .filter(item -> !item.get("key").equals("error"))
+                .mapToDouble(item -> Double.parseDouble(item.get("value").replace("€", "").replace(",", ".").trim()))
+                .sum();
+
+            double totalSum = totalPrice + kurbeitragTotal - prepayment;
+
+            // Add rows to "Gesamt" table
+            gesamtItems.add(Map.of(
+                "key", "prepayment",
+                "label", "Anzahlung",
+                "value", String.format("-%.2f €", prepayment)
+            ));
+            gesamtItems.add(Map.of(
+                "key", "totalSum",
+                "label", "Summe insgesamt",
+                "value", String.format("%.2f €", totalSum)
+            ));
+
+            // Add all sections to the response
             billSections.put("main", billItems);
             billSections.put("kurbeitrag", kurbeitragItems);
+            billSections.put("gesamt", gesamtItems);
 
         } catch (Exception e) {
             billItems.add(Map.of(
@@ -585,7 +614,8 @@ public class BookingController {
                 booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
                 booking.getDogs(),
                 id,
-                booking.isIncludeBreakfast()
+                booking.isIncludeBreakfast(),
+                0.0 // Adding prepayment as the last argument
             );
 
             model.addAttribute("booking", booking);
