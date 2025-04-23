@@ -574,7 +574,7 @@ public class BookingController {
             gesamtItems.add(Map.of(
                 "key", "prepayment",
                 "label", "Anzahlung",
-                "value", String.format("-%.2f €", prepayment)
+                "value", String.format("%.2f €", prepayment)
             ));
             gesamtItems.add(Map.of(
                 "key", "totalSum",

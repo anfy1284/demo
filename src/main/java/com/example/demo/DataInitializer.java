@@ -100,20 +100,24 @@ public class DataInitializer {
         booking1.setStartDate("2025-03-05");
         booking1.setEndDate("2025-03-06");
         booking1.setDescription("Booking for March 5-6, 2025");
-        booking1.setCustomerName("John Doe"); // Set customer name
-        booking1.setStatus("booked"); // Set status
+        booking1.setCustomerName("John Doe");
+        booking1.setCustomerAddress("Musterstraße 1, 10115 Berlin");
+        booking1.setPrepayment(100.0); // Предоплата
+        booking1.setStatus("booked");
         booking1.setRoom(roomService.findByName("Room 1"));
-        booking1.setGuests(List.of(guest1, guest2)); // Add guests
+        booking1.setGuests(List.of(guest1, guest2));
         bookingService.add(booking1);
 
         Booking booking2 = new Booking();
         booking2.setStartDate("2025-03-15");
         booking2.setEndDate("2025-03-16");
         booking2.setDescription("Booking for March 15-16, 2025");
-        booking2.setCustomerName("Jane Smith"); // Set customer name
-        booking2.setStatus("booked"); // Set status
+        booking2.setCustomerName("Jane Smith");
+        booking2.setCustomerAddress("Hauptstraße 5, 80331 München");
+        booking2.setPrepayment(150.0); // Предоплата
+        booking2.setStatus("booked");
         booking2.setRoom(roomService.findByName("Room 2"));
-        booking2.setGuests(List.of(guest3)); // Add guests
+        booking2.setGuests(List.of(guest3));
         bookingService.add(booking2);
 
         Booking booking3 = new Booking();
@@ -121,9 +125,11 @@ public class DataInitializer {
         booking3.setEndDate("2025-03-21");
         booking3.setDescription("Booking for March 20-21, 2025");
         booking3.setCustomerName("Bob Brown");
-        booking3.setStatus("booked"); // Set status
+        booking3.setCustomerAddress("Bahnhofstraße 10, 90402 Nürnberg");
+        booking3.setPrepayment(200.0); // Предоплата
+        booking3.setStatus("booked");
         booking3.setRoom(roomService.findByName("Room 1"));
-        booking3.setGuests(List.of(guest4, guest5)); // Add guests
+        booking3.setGuests(List.of(guest4, guest5));
         bookingService.add(booking3);
 
         Booking booking4 = new Booking();
@@ -131,9 +137,11 @@ public class DataInitializer {
         booking4.setEndDate("2025-03-26");
         booking4.setDescription("Booking for March 25-26, 2025");
         booking4.setCustomerName("Alice Johnson");
-        booking4.setStatus("booked"); // Set status
+        booking4.setCustomerAddress("Schillerstraße 3, 70173 Stuttgart");
+        booking4.setPrepayment(50.0); // Предоплата
+        booking4.setStatus("booked");
         booking4.setRoom(roomService.findByName("Room 2"));
-        booking4.setGuests(List.of(guest1)); // Add guests
+        booking4.setGuests(List.of(guest1));
         bookingService.add(booking4);
 
         Booking booking5 = new Booking();
@@ -141,9 +149,11 @@ public class DataInitializer {
         booking5.setEndDate("2025-03-31");
         booking5.setDescription("Booking for March 30-31, 2025");
         booking5.setCustomerName("Charlie Green");
-        booking5.setStatus("booked"); // Set status
+        booking5.setCustomerAddress("Goethestraße 7, 60313 Frankfurt am Main");
+        booking5.setPrepayment(120.0); // Предоплата
+        booking5.setStatus("booked");
         booking5.setRoom(roomService.findByName("Room 1"));
-        booking5.setGuests(List.of(guest2, guest3)); // Add guests
+        booking5.setGuests(List.of(guest2, guest3));
         bookingService.add(booking5);
 
         // Additional test bookings for April
@@ -152,9 +162,11 @@ public class DataInitializer {
         aprilBooking6.setEndDate("2025-04-04");
         aprilBooking6.setDescription("Booking for April 3-4, 2025");
         aprilBooking6.setCustomerName("Eve Adams");
+        aprilBooking6.setCustomerAddress("Friedrichstraße 12, 50667 Köln");
+        aprilBooking6.setPrepayment(80.0); // Предоплата
         aprilBooking6.setStatus("booked");
         aprilBooking6.setRoom(roomService.findByName("Room 3"));
-        aprilBooking6.setGuests(List.of(guest1, guest4)); // Add guests
+        aprilBooking6.setGuests(List.of(guest1, guest4));
         bookingService.add(aprilBooking6);
 
         Booking aprilBooking7 = new Booking();
@@ -162,9 +174,11 @@ public class DataInitializer {
         aprilBooking7.setEndDate("2025-04-13");
         aprilBooking7.setDescription("Booking for April 11-13, 2025");
         aprilBooking7.setCustomerName("Frank Miller");
+        aprilBooking7.setCustomerAddress("Kaiserstraße 8, 76133 Karlsruhe");
+        aprilBooking7.setPrepayment(180.0); // Предоплата
         aprilBooking7.setStatus("booked");
         aprilBooking7.setRoom(roomService.findByName("Room 4"));
-        aprilBooking7.setGuests(List.of(guest2, guest5)); // Add guests
+        aprilBooking7.setGuests(List.of(guest2, guest5));
         bookingService.add(aprilBooking7);
 
         Booking aprilBooking8 = new Booking();
@@ -172,9 +186,11 @@ public class DataInitializer {
         aprilBooking8.setEndDate("2025-04-19");
         aprilBooking8.setDescription("Booking for April 17-19, 2025");
         aprilBooking8.setCustomerName("Grace Hopper");
+        aprilBooking8.setCustomerAddress("Marktplatz 1, 28195 Bremen");
+        aprilBooking8.setPrepayment(90.0); // Предоплата
         aprilBooking8.setStatus("booked");
         aprilBooking8.setRoom(roomService.findByName("Room 1"));
-        aprilBooking8.setGuests(List.of(guest3)); // Add guests
+        aprilBooking8.setGuests(List.of(guest3));
         bookingService.add(aprilBooking8);
 
         Booking aprilBooking9 = new Booking();
@@ -182,9 +198,11 @@ public class DataInitializer {
         aprilBooking9.setEndDate("2025-04-23");
         aprilBooking9.setDescription("Booking for April 22-23, 2025");
         aprilBooking9.setCustomerName("Henry Ford");
+        aprilBooking9.setCustomerAddress("Rathausplatz 2, 86150 Augsburg");
+        aprilBooking9.setPrepayment(70.0); // Предоплата
         aprilBooking9.setStatus("booked");
         aprilBooking9.setRoom(roomService.findByName("Room 2"));
-        aprilBooking9.setGuests(List.of(guest4, guest5)); // Add guests
+        aprilBooking9.setGuests(List.of(guest4, guest5));
         bookingService.add(aprilBooking9);
 
         Booking aprilBooking10 = new Booking();
@@ -192,9 +210,11 @@ public class DataInitializer {
         aprilBooking10.setEndDate("2025-04-27");
         aprilBooking10.setDescription("Booking for April 25-27, 2025");
         aprilBooking10.setCustomerName("Isabella Swan");
+        aprilBooking10.setCustomerAddress("Altstadt 4, 90403 Nürnberg");
+        aprilBooking10.setPrepayment(160.0); // Предоплата
         aprilBooking10.setStatus("booked");
         aprilBooking10.setRoom(roomService.findByName("Room 3"));
-        aprilBooking10.setGuests(List.of(guest1, guest2, guest3)); // Add guests
+        aprilBooking10.setGuests(List.of(guest1, guest2, guest3));
         bookingService.add(aprilBooking10);
 
         // Создание объектов RoomPricing с использованием roomId
