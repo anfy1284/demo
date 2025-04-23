@@ -133,7 +133,7 @@ public class BookingController {
             }
 
             // Рассчитываем счет для текущей брони
-            Map<String, List<Map<String, String>>> billSections = calculateBill(
+            Map<String, Object> billSectionsRaw = calculateBill(
                 booking.getRoom().getID(),
                 booking.getStartDate(),
                 booking.getEndDate(),
@@ -144,6 +144,12 @@ public class BookingController {
                 booking.isIncludeBreakfast(),
                 0.0 // Adding prepayment as the last argument
             );
+            Map<String, List<Map<String, String>>> billSections = new HashMap<>();
+            billSectionsRaw.forEach((key, value) -> {
+                if (value instanceof List) {
+                    billSections.put(key, (List<Map<String, String>>) value);
+                }
+            });
 
             // Отладочный вывод для проверки содержимого счета
             System.out.println("Bill sections: " + billSections);
@@ -327,7 +333,7 @@ public class BookingController {
 
     @GetMapping("/calculate-bill")
     @ResponseBody
-    public Map<String, List<Map<String, String>>> calculateBill(
+    public Map<String, Object> calculateBill(
             @RequestParam(value = "roomId", required = false) String roomId,
             @RequestParam(value = "startDate", required = false) String startDate,
             @RequestParam(value = "endDate", required = false) String endDate,
@@ -337,10 +343,12 @@ public class BookingController {
             @RequestParam(value = "bookingId", required = false) String bookingId,
             @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
             @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment) {
-        Map<String, List<Map<String, String>>> billSections = new HashMap<>();
+        Map<String, Object> billSections = new HashMap<>();
         List<Map<String, String>> billItems = new ArrayList<>();
         List<Map<String, String>> kurbeitragItems = new ArrayList<>();
         List<Map<String, String>> gesamtItems = new ArrayList<>();
+        double totalPrice = 0.0;
+
         try {
             // Учитываем предоплату из параметра, если она передана
             if (bookingId != null && prepayment == 0.0) {
@@ -380,7 +388,6 @@ public class BookingController {
             double accommodationPrice = 0.0;
             double priceForChildren3To5 = roomPricing.getPriceForChildren3To5();
             double priceForChildrenUnder3 = roomPricing.getPriceForChildrenUnder3();
-            double totalPrice = 0.0; // Initialize totalPrice
             LocalDate today = LocalDate.now();
             int adultGuestCount = 0;
             int children3To5Count = 0;
@@ -539,38 +546,17 @@ public class BookingController {
             // Итоговая строка
             totalPrice += accommodationPrice + children3To5Price + dogFee;
 
-            // Вычитаем предоплату
-            // totalPrice -= prepayment;
-
+            // Добавляем строку с итоговой суммой
             billItems.add(Map.of(
                 "key", "totalPrice",
-                "label", "Gesamt2",
+                "label", "Gesamtbetrag",
                 "value", String.format("%.2f €", totalPrice)
             ));
 
-            // Добавляем предоплату в счет
-            // if (prepayment > 0) {
-            //     billItems.add(Map.of(
-            //         "key", "prepayment",
-            //         "label", "Anzahlung",
-            //         "value", String.format("-%.2f €", prepayment)
-            //     ));
-            // }
+            // Вычисляем 7% MwSt от итоговой суммы
+            double mwst = totalPrice * 0.07;
 
-            // // Calculate total for "Gesamt" table
-            // double mainTotal = billItems.stream()
-            //     .filter(item -> !item.get("key").equals("error"))
-            //     .mapToDouble(item -> Double.parseDouble(item.get("value").replace("€", "").replace(",", ".").trim()))
-            //     .sum();
-
-            double kurbeitragTotal = kurbeitragItems.stream()
-                .filter(item -> !item.get("key").equals("error"))
-                .mapToDouble(item -> Double.parseDouble(item.get("value").replace("€", "").replace(",", ".").trim()))
-                .sum();
-
-            double totalSum = totalPrice + kurbeitragTotal - prepayment;
-
-            // Add rows to "Gesamt" table
+            // Добавляем строки в раздел "Gesamt"
             gesamtItems.add(Map.of(
                 "key", "prepayment",
                 "label", "Anzahlung",
@@ -579,13 +565,14 @@ public class BookingController {
             gesamtItems.add(Map.of(
                 "key", "totalSum",
                 "label", "Summe insgesamt",
-                "value", String.format("%.2f €", totalSum)
+                "value", String.format("%.2f €", totalPrice + totalKurbeitrag - prepayment)
             ));
 
-            // Add all sections to the response
+            // Добавляем все разделы в ответ
             billSections.put("main", billItems);
             billSections.put("kurbeitrag", kurbeitragItems);
             billSections.put("gesamt", gesamtItems);
+            billSections.put("mwst", String.format("%.2f €", mwst)); // Добавляем MwSt в ответ
 
         } catch (Exception e) {
             billItems.add(Map.of(
@@ -606,7 +593,7 @@ public class BookingController {
             }
 
             // Calculate the bill for the booking
-            Map<String, List<Map<String, String>>> billSections = calculateBill(
+            Map<String, Object> billSections = calculateBill(
                 booking.getRoom().getID(),
                 booking.getStartDate(),
                 booking.getEndDate(),
