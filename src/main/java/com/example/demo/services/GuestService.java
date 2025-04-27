@@ -4,6 +4,9 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.classes.Guest;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 public class GuestService extends BaseService<Guest> {
 
@@ -25,5 +28,17 @@ public class GuestService extends BaseService<Guest> {
     @Override
     protected void setId(Guest guest, String id) {
         guest.setID(id);
+    }
+
+    public List<Guest> findByName(String query) {
+        return items.stream()
+            .filter(guest -> guest.getName().toLowerCase().contains(query.toLowerCase()))
+            .collect(Collectors.toList());
+    }
+
+    public List<Guest> findByNameAndDateOfBirth(String guestName, String guestDob) {
+        return items.stream()
+            .filter(guest -> guest.getName().equalsIgnoreCase(guestName) && guest.getDateOfBirth().equals(guestDob))
+            .collect(Collectors.toList());
     }
 }

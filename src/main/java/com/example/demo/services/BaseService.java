@@ -22,7 +22,9 @@ public abstract class BaseService<T> {
     }
 
     public void add(T item) {
-        setId(item, String.valueOf(++nextId));
+        if (getId(item) == null || getId(item).isEmpty()) {
+            setId(item, String.valueOf(++nextId));
+        }
         items.add(item);
     }
 
