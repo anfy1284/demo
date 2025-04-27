@@ -4,30 +4,119 @@ import java.util.List;
 import java.time.LocalDate;
 import java.util.ArrayList;
 
-import lombok.Data;
-
-@Data
 public class Booking {
     private String ID;
     private Room room;
     private String customerName;
     private String startDate;
-    private String endDate; 
-    private String status; // "booked", "checked-in", "checked-out", "cancelled"
-    private String paymentStatus; // "paid", "pending", "refunded"
-    private String paymentMethod; // "credit card", "cash", "bank transfer"
-    private String specialRequests; // any special requests from the customer
-    private List<Guest> guests; // list of guests associated with the booking
+    private String endDate;
+    private String status;
+    private String paymentStatus;
+    private String paymentMethod;
+    private String specialRequests;
+    private List<Guest> guests;
     private LocalDate date;
-    private String description; // description of the booking
-    private int duration; // Продолжительность бронирования в днях
-    private int dogs; // Количество собак
-    private boolean includeBreakfast; // Учитывать завтраки
-    private String customerAddress; // Address of the customer
-    private double prepayment; // Поле для хранения предоплаты
+    private String description;
+    private int duration;
+    private int dogs;
+    private boolean includeBreakfast;
+    private String customerAddress;
+    private double prepayment;
 
-    public String getRoomId() {
-        return room != null ? room.getID() : null;
+    public String getID() {
+        return ID;
+    }
+
+    public void setID(String ID) {
+        this.ID = ID;
+    }
+
+    public Room getRoom() {
+        return room;
+    }
+
+    public void setRoom(Room room) {
+        this.room = room;
+    }
+
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
+    public String getSpecialRequests() {
+        return specialRequests;
+    }
+
+    public void setSpecialRequests(String specialRequests) {
+        this.specialRequests = specialRequests;
+    }
+
+    public List<Guest> getGuests() {
+        return guests;
+    }
+
+    public void setGuests(List<Guest> guests) {
+        this.guests = guests;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public void setDate(LocalDate date) {
+        this.date = date;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public int getDuration() {
@@ -70,9 +159,13 @@ public class Booking {
         this.prepayment = prepayment;
     }
 
+    public String getRoomId() {
+        return room != null ? room.getID() : null;
+    }
+
     public static Booking createEmpty() {
         try {
-            Booking booking = new Booking(); // Use the default constructor directly
+            Booking booking = new Booking();
             for (var field : Booking.class.getDeclaredFields()) {
                 field.setAccessible(true);
                 if (field.getType().equals(String.class)) {
@@ -80,13 +173,13 @@ public class Booking {
                 } else if (field.getType().equals(int.class)) {
                     field.set(booking, 0);
                 } else if (field.getType().equals(boolean.class)) {
-                    field.set(booking, false); // Initialize boolean fields to false
+                    field.set(booking, false);
                 } else if (field.getType().equals(LocalDate.class)) {
-                    field.set(booking, null); // Set to null instead of LocalDate.MIN
+                    field.set(booking, null);
                 } else if (field.getType().equals(List.class)) {
-                    field.set(booking, new ArrayList<>()); // Use a mutable list
+                    field.set(booking, new ArrayList<>());
                 } else if (field.getType().equals(double.class)) {
-                    field.set(booking, 0.0); // Initialize double fields to 0.0
+                    field.set(booking, 0.0);
                 } else {
                     field.set(booking, null);
                 }
