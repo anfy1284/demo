@@ -112,7 +112,7 @@
             </tr>
         </table>
         <div class="header" style="justify-content: center; text-align: center; margin-top: 10px;">
-            
+            <img src="/images/beim_seiler_4c_logo_2021.png" alt="Logo" class="logo">
             <div class="contact-info">
                 Gästehaus Beim Seiler<br>
                 Hauptstr. 8 + 10<br>
