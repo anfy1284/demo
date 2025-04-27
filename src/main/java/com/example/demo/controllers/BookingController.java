@@ -121,6 +121,7 @@ public class BookingController {
 
             // Возврат страницы ошибки
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            model.addAttribute("errorDetails", e.toString()); // Передаем детали ошибки
             return "error";
         }
     }

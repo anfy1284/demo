@@ -3,7 +3,6 @@
 <head>
     <title>Fehler</title>
     <script>
-        // Логируем сообщение об ошибке в консоль
         document.addEventListener('DOMContentLoaded', () => {
             const errorMessageElement = document.querySelector('p');
             const errorMessage = errorMessageElement.innerText.trim();
@@ -18,5 +17,9 @@
 <body>
     <h1>Ein Fehler ist aufgetreten</h1>
     <p th:text="${errorMessage! 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.'}"></p>
+    <#if errorDetails??>
+        <h2>Details:</h2>
+        <pre>${errorDetails}</pre>
+    </#if>
 </body>
 </html>
