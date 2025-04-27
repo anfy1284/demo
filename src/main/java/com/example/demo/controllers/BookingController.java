@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Set;
 import com.example.demo.classes.RoomPricing; // Ensure this is the correct package for RoomPricing
 import com.example.demo.services.RoomPricingService; // Ensure this is the correct package for RoomPricingService
+import java.util.Arrays;
 
 @Controller
 @DependsOn("dataInitializer")
@@ -436,21 +437,21 @@ public class BookingController {
             if (kurbeitragUnder6 > 0) {
                 kurbeitragItems.add(Map.of(
                     "key", "kurbeitragUnder6",
-                    "label", "Kurbeitrag (0-5 Jahre)",
+                    "label", "0-5 Jahre",
                     "value", String.format("%.2f €", kurbeitragUnder6)
                 ));
             }
             if (kurbeitrag6To15 > 0) {
                 kurbeitragItems.add(Map.of(
                     "key", "kurbeitrag6To15",
-                    "label", "Kurbeitrag (6-15 Jahre)",
+                    "label", "6-15 Jahre",
                     "value", String.format("%.2f €", kurbeitrag6To15)
                 ));
             }
             if (kurbeitrag16AndOlder > 0) {
                 kurbeitragItems.add(Map.of(
                     "key", "kurbeitrag16AndOlder",
-                    "label", "Kurbeitrag (16+ Jahre)",
+                    "label", "16+ Jahre",
                     "value", String.format("%.2f €", kurbeitrag16AndOlder)
                 ));
             }
@@ -458,7 +459,7 @@ public class BookingController {
             // Add total row for Kurbeitrag
             kurbeitragItems.add(Map.of(
                 "key", "totalKurbeitrag",
-                "label", "Gesamt1",
+                "label", "Gesamt",
                 "value", String.format("%.2f €", totalKurbeitrag)
             ));
 
@@ -549,7 +550,7 @@ public class BookingController {
             // Добавляем строку с итоговой суммой
             billItems.add(Map.of(
                 "key", "totalPrice",
-                "label", "Gesamtbetrag",
+                "label", "Betrag",
                 "value", String.format("%.2f €", totalPrice)
             ));
 
@@ -564,7 +565,7 @@ public class BookingController {
             ));
             gesamtItems.add(Map.of(
                 "key", "totalSum",
-                "label", "Summe insgesamt",
+                "label", "Restbetrag",
                 "value", String.format("%.2f €", totalPrice + totalKurbeitrag - prepayment)
             ));
 
@@ -592,8 +593,23 @@ public class BookingController {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
 
-            // Calculate the bill for the booking
-            Map<String, Object> billSections = calculateBill(
+            // Форматируем даты в формате "ДД.мм.ГГГГ"
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+            String formattedStartDate = LocalDate.parse(booking.getStartDate()).format(formatter);
+            String formattedEndDate = LocalDate.parse(booking.getEndDate()).format(formatter);
+
+            // Разделяем адрес клиента на строки
+            String[] customerAddressLines = booking.getCustomerAddress().split(",");
+
+            // Добавляем текущую дату в модель
+            String currentDate = LocalDate.now().format(formatter);
+            model.addAttribute("currentDate", currentDate);
+            model.addAttribute("formattedStartDate", formattedStartDate);
+            model.addAttribute("formattedEndDate", formattedEndDate);
+            model.addAttribute("customerAddressLines", Arrays.asList(customerAddressLines));
+
+            model.addAttribute("booking", booking);
+            model.addAttribute("bill", calculateBill(
                 booking.getRoom().getID(),
                 booking.getStartDate(),
                 booking.getEndDate(),
@@ -602,11 +618,8 @@ public class BookingController {
                 booking.getDogs(),
                 id,
                 booking.isIncludeBreakfast(),
-                0.0 // Adding prepayment as the last argument
-            );
-
-            model.addAttribute("booking", booking);
-            model.addAttribute("bill", billSections); // Pass the bill structure to the template
+                0.0
+            ));
             return "bill";
         } catch (Exception e) {
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");

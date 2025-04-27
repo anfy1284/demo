@@ -694,7 +694,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th colspan="2" class="column-description">Kurbeitrag</th>
+                        <th colspan="2" class="column-description">Kurabgabe</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -712,7 +712,7 @@
             <table id="totalTable">
                 <thead>
                     <tr>
-                        <th colspan="2" class="column-description">Gesamt</th>
+                        <th colspan="2" class="column-description">Betrag</th>
                     </tr>
                 </thead>
                 <tbody>
