@@ -623,7 +623,12 @@ public class BookingController {
             ));
             return "bill";
         } catch (Exception e) {
+            // Логируем ошибку для диагностики
+            System.err.println("Error in viewBill: " + e.getMessage());
+            e.printStackTrace();
+
             model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            model.addAttribute("errorDetails", e.toString());
             return "error";
         }
     }
