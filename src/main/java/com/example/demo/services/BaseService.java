@@ -28,6 +28,26 @@ public abstract class BaseService<T> {
         items.add(item);
     }
 
+    public void add(T item, boolean saveToFile) {
+        if (getId(item) == null || getId(item).isEmpty()) {
+            setId(item, String.valueOf(++nextId));
+        } else {
+            // Обновляем nextId, чтобы он соответствовал максимальному ID
+            long currentId = Long.parseLong(getId(item));
+            if (currentId > nextId) {
+                nextId = currentId;
+            }
+        }
+        items.add(item);
+        if (saveToFile) {
+            onItemAdded(item); // Вызываем метод для действий после добавления
+        }
+    }
+
+    protected void onItemAdded(T item) {
+        // Переопределяется в наследниках, если нужно
+    }
+
     public boolean deleteById(String id) {
         return items.removeIf(item -> getId(item).equals(id));
     }

@@ -468,7 +468,7 @@ public class BookingController {
             if (accommodationPrice > 0) {
                 billItems.add(Map.of(
                     "key", "accommodationPrice",
-                    "label", "Unterkunftspreis (Erwachsene и Kinder ab 6 Jahren)",
+                    "label", "Unternachtungen",
                     "value", String.format("%.2f €", accommodationPrice)
                 ));
             }
