@@ -225,16 +225,21 @@ public class BookingController {
             booking.setCustomerAddress(customerAddress); // Устанавливаем адрес клиента
             booking.setPrepayment(prepayment);
 
+            // Debug: Log all keys in allParams
+            System.out.println("All parameters: " + allParams.keySet());
+
             // Process guests
             List<Guest> guests = new ArrayList<>();
             allParams.keySet().stream()
                 .filter(key -> key.startsWith("guests[") && key.endsWith("].name"))
                 .forEach(key -> {
+                    System.out.println("Processing key: " + key); // Debug: Log the key being processed
                     String index = key.substring(7, key.indexOf("].name")); // Extract index from key
                     String guestName = allParams.get("guests[" + index + "].name");
                     String guestDob = allParams.get("guests[" + index + "].dateOfBirth");
 
                     if (guestName != null && guestDob != null) {
+                        System.out.println("Found guest: " + guestName + ", DOB: " + guestDob); // Debug: Log guest details
                         List<Guest> guestsFound = guestService.findByNameAndDateOfBirth(guestName, guestDob);
                         Guest guest = guestsFound.isEmpty() ? null : guestsFound.get(0);
                         if (guest == null) {

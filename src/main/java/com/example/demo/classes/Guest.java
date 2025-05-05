@@ -1,6 +1,10 @@
 package com.example.demo.classes;
 
-public class Guest {
+import java.io.Serializable;
+
+public class Guest implements Serializable {
+    private static final long serialVersionUID = 1L; // Add a unique serial version UID
+
     private String ID;
     private String name;
     private String dateOfBirth;

@@ -38,64 +38,67 @@ public class DataInitializer {
     public void onApplicationEvent() {
         System.out.println("Initializing data...");
 
+        guestService.loadAllFromFile(); // Load guests from file
+        System.out.println("Guests loaded from file.");
+
         // Создание комнат
         Room room1 = new Room();
-        room1.setName("Room 1");
+        room1.setName("Ferienwohnung Nr. 1");
         roomService.add(room1);
 
         Room room2 = new Room();
-        room2.setName("Room 2");
+        room2.setName("Ferienwohnung Nr. 2");
         roomService.add(room2);
 
         // Add new rooms
         Room room3 = new Room();
-        room3.setName("Room 3");
+        room3.setName("Ferienwohnung Nr. 3");
         roomService.add(room3);
 
         Room room4 = new Room();
-        room4.setName("Room 4");
+        room4.setName("Ferienwohnung Nr. 4");
         roomService.add(room4);
 
-        // Add test guests
-        Guest guest1 = new Guest();
-        guest1.setName("John Doe");
-        guest1.setDateOfBirth("1985-05-15");
-        guest1.setEmail("johndoe@example.com");
-        guest1.setPhoneNumber("123-456-7890");
-        guest1.setAddress("123 Main St, Springfield");
-        guestService.add(guest1);
+        // // Add test guests
+        // Guest guest1 = new Guest();
+        // guest1.setName("John Doe");
+        // guest1.setDateOfBirth("1985-05-15");
+        // guest1.setEmail("johndoe@example.com");
+        // guest1.setPhoneNumber("123-456-7890");
+        // guest1.setAddress("123 Main St, Springfield");
+        // guestService.add(guest1);
 
-        Guest guest2 = new Guest();
-        guest2.setName("Jane Smith");
-        guest2.setDateOfBirth("1990-08-22");
-        guest2.setEmail("janesmith@example.com");
-        guest2.setPhoneNumber("987-654-3210");
-        guest2.setAddress("456 Elm St, Springfield");
-        guestService.add(guest2);
+        // Guest guest2 = new Guest();
+        // guest2.setName("Jane Smith");
+        // guest2.setDateOfBirth("1990-08-22");
+        // guest2.setEmail("janesmith@example.com");
+        // guest2.setPhoneNumber("987-654-3210");
+        // guest2.setAddress("456 Elm St, Springfield");
+        // guestService.add(guest2);
 
-        Guest guest3 = new Guest();
-        guest3.setName("Alice Johnson");
-        guest3.setDateOfBirth("1975-12-05");
-        guest3.setEmail("alicejohnson@example.com");
-        guest3.setPhoneNumber("555-123-4567");
-        guest3.setAddress("789 Oak St, Springfield");
-        guestService.add(guest3);
+        // Guest guest3 = new Guest();
+        // guest3.setName("Alice Johnson");
+        // guest3.setDateOfBirth("1975-12-05");
+        // guest3.setEmail("alicejohnson@example.com");
+        // guest3.setPhoneNumber("555-123-4567");
+        // guest3.setAddress("789 Oak St, Springfield");
+        // guestService.add(guest3);
 
-        Guest guest4 = new Guest();
-        guest4.setName("Bob Brown");
-        guest4.setDateOfBirth("1980-03-10");
-        guest4.setEmail("bobbrown@example.com");
-        guest4.setPhoneNumber("444-987-6543");
-        guest4.setAddress("321 Pine St, Springfield");
-        guestService.add(guest4);
+        // Guest guest4 = new Guest();
+        // guest4.setName("Bob Brown");
+        // guest4.setDateOfBirth("1980-03-10");
+        // guest4.setEmail("bobbrown@example.com");
+        // guest4.setPhoneNumber("444-987-6543");
+        // guest4.setAddress("321 Pine St, Springfield");
+        // guestService.add(guest4);
 
-        Guest guest5 = new Guest();
-        guest5.setName("Charlie Green");
-        guest5.setDateOfBirth("2000-07-25");
-        guest5.setEmail("charliegreen@example.com");
-        guest5.setPhoneNumber("333-222-1111");
-        guest5.setAddress("654 Maple St, Springfield");
-        guestService.add(guest5);
+        // Guest guest5 = new Guest();
+        // guest5.setName("Charlie Green");
+        // guest5.setDateOfBirth("2000-07-25");
+        // guest5.setEmail("charliegreen@example.com");
+        // guest5.setPhoneNumber("333-222-1111");
+        // guest5.setAddress("654 Maple St, Springfield");
+        // guestService.add(guest5);
 
         bookingService.loadAllFromFile(); // Загружаем брони из файла
         System.out.println("Bookings loaded from file.");
