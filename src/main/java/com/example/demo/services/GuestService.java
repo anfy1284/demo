@@ -2,6 +2,7 @@ package com.example.demo.services;
 
 import org.springframework.stereotype.Service;
 
+import com.example.demo.classes.Booking;
 import com.example.demo.classes.Guest;
 
 import java.util.List;
@@ -13,15 +14,15 @@ import java.util.ArrayList;
 public class GuestService extends BaseService<Guest> {
     private static final String GUESTS_FILE = "guests.dat";
 
-    {
-        Guest guest1 = new Guest();
-        add(guest1);
-        guest1.setName("Guest 1");
+    // {
+    //     Guest guest1 = new Guest();
+    //     add(guest1);
+    //     guest1.setName("Guest 1");
 
-        Guest guest2 = new Guest();
-        add(guest2);
-        guest2.setName("Guest 2");
-    }
+    //     Guest guest2 = new Guest();
+    //     add(guest2);
+    //     guest2.setName("Guest 2");
+    // }
 
     @Override
     protected String getId(Guest guest) {
@@ -72,10 +73,15 @@ public class GuestService extends BaseService<Guest> {
         add(guest, true); // Default behavior: save to file
     }
 
-    public void add(Guest guest, boolean saveToFile) {
-        super.add(guest);
-        if (saveToFile) {
-            saveAllToFile(); // Save to file only if explicitly requested
-        }
+    @Override
+    protected void onItemAdded(Guest guest) {
+        saveAllToFile(); // Сохраняем в файл только если это явно указано
     }
+
+    // public void add(Guest guest, boolean saveToFile) {
+    //     super.add(guest);
+    //     if (saveToFile) {
+    //         saveAllToFile(); // Save to file only if explicitly requested
+    //     }
+    // }
 }
