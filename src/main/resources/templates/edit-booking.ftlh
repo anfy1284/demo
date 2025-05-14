@@ -166,8 +166,6 @@
         }
     }
 
-    document.getElementById('prepayment').addEventListener('change', calculateBill); // Вызываем calculateBill при изменении предоплаты
-
     function validateForm() {
         const startDate = document.getElementById('startDate').value;
         const endDate = document.getElementById('endDate').value;
@@ -186,8 +184,6 @@
 
         return true;
     }
-
-    document.addEventListener('DOMContentLoaded', calculateBill); // Пересчет прайса при открытии страницы
 
     async function saveAndPrint(bookingId) {
         try {
@@ -297,35 +293,45 @@
         loadingIndicator.style.display = show ? 'block' : 'none';
     }
 
-    document.getElementById('customerAddress').addEventListener('keydown', (event) => {
-        const suggestionsList = document.getElementById('addressSuggestions');
-        const items = suggestionsList.querySelectorAll('.suggestion-item');
+//    document.addEventListener('DOMContentLoaded', async () => {
+//        await calculateBill(); // Пересчитываем прайс при загрузке страницы
+//    });
 
-        if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            if (selectedSuggestionIndex < items.length - 1) {
-                highlightSuggestion(selectedSuggestionIndex + 1);
-            } else if (selectedSuggestionIndex === -1 && items.length > 0) {
-                highlightSuggestion(0); // Выделяем первый элемент, если ничего не выделено
-            }
-        } else if (event.key === 'ArrowUp') {
-            event.preventDefault();
-            if (selectedSuggestionIndex > 0) {
-                highlightSuggestion(selectedSuggestionIndex - 1);
-            }
-        } else if (event.key === 'Enter') {
-            event.preventDefault();
-            if (selectedSuggestionIndex >= 0) {
-                selectSuggestion(items[selectedSuggestionIndex].dataset.value);
-            }
-        } else if (event.key === 'Escape') {
-            clearSuggestions();
-        }
-    });
+//    document.addEventListener('DOMContentLoaded', calculateBill); // Пересчет прайса при открытии страницы
 
-    document.addEventListener('DOMContentLoaded', async () => {
-        await calculateBill(); // Пересчитываем прайс при загрузке страницы
-    });
+    document.addEventListener('DOMContentLoaded', () => {
+
+        document.getElementById('customerAddress').addEventListener('keydown', (event) => {
+            const suggestionsList = document.getElementById('addressSuggestions');
+            const items = suggestionsList.querySelectorAll('.suggestion-item');
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                if (selectedSuggestionIndex < items.length - 1) {
+                    highlightSuggestion(selectedSuggestionIndex + 1);
+                } else if (selectedSuggestionIndex === -1 && items.length > 0) {
+                    highlightSuggestion(0); // Выделяем первый элемент, если ничего не выделено
+                }
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (selectedSuggestionIndex > 0) {
+                    highlightSuggestion(selectedSuggestionIndex - 1);
+                }
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                if (selectedSuggestionIndex >= 0) {
+                    selectSuggestion(items[selectedSuggestionIndex].dataset.value);
+                }
+            } else if (event.key === 'Escape') {
+                clearSuggestions();
+            }
+        });
+
+        document.getElementById('prepayment').addEventListener('change', calculateBill); // Вызываем calculateBill при изменении предоплаты
+
+        calculateBill();
+
+    });    
 
 </script>
 

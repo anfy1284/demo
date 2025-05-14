@@ -134,32 +134,32 @@ public class BookingController {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
 
-            // Рассчитываем счет для текущей брони
-            Map<String, Object> billSectionsRaw = calculateBill(
-                booking.getRoom().getID(),
-                booking.getStartDate(),
-                booking.getEndDate(),
-                (Integer) null,
-                booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
-                booking.getDogs(),
-                id,
-                booking.isIncludeBreakfast(),
-                0.0 // Adding prepayment as the last argument
-            );
-            Map<String, List<Map<String, String>>> billSections = new HashMap<>();
-            billSectionsRaw.forEach((key, value) -> {
-                if (value instanceof List) {
-                    billSections.put(key, (List<Map<String, String>>) value);
-                }
-            });
+            // // Рассчитываем счет для текущей брони
+            // Map<String, Object> billSectionsRaw = calculateBill(
+            //     booking.getRoom().getID(),
+            //     booking.getStartDate(),
+            //     booking.getEndDate(),
+            //     (Integer) null,
+            //     booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
+            //     booking.getDogs(),
+            //     id,
+            //     booking.isIncludeBreakfast(),
+            //     0.0 // Adding prepayment as the last argument
+            // );
+            // Map<String, List<Map<String, String>>> billSections = new HashMap<>();
+            // billSectionsRaw.forEach((key, value) -> {
+            //     if (value instanceof List) {
+            //         billSections.put(key, (List<Map<String, String>>) value);
+            //     }
+            // });
 
-            // Отладочный вывод для проверки содержимого счета
-            System.out.println("Bill sections: " + billSections);
+            // // Отладочный вывод для проверки содержимого счета
+            // System.out.println("Bill sections: " + billSections);
 
             model.addAttribute("method", "edit");
             model.addAttribute("booking", booking);
             model.addAttribute("rooms", roomService.getAll());
-            model.addAttribute("bill", billSections); // Передаем структуру счета в шаблон
+            // model.addAttribute("bill", billSections); // Передаем структуру счета в шаблон
 
             return "edit-booking";
         } catch (Exception e) {
@@ -390,7 +390,7 @@ public class BookingController {
 
             LocalDate start = LocalDate.parse(startDate);
             LocalDate end = LocalDate.parse(endDate);
-            long days = start.datesUntil(end.plusDays(1)).count();
+            long days = start.datesUntil(end.plusDays(1)).count() - 1; // Calculate the number of nights
 
             double accommodationPrice = 0.0;
             double priceForChildren3To5 = roomPricing.getPriceForChildren3To5();
@@ -400,6 +400,12 @@ public class BookingController {
             int children3To5Count = 0;
             int childrenUnder3Count = 0;
             int children6To15Count = 0;
+            
+            Room room = roomService.getById(roomId);
+            String roomName = "";
+            if (room != null) {
+                roomName = room.getName();
+            }
 
             if (guestDatesOfBirth != null) {
                 for (String dob : guestDatesOfBirth) {
@@ -471,9 +477,15 @@ public class BookingController {
 
             // Add other bill items to the main list
             if (accommodationPrice > 0) {
+                String label = "";
+                if (days > 1) {
+                    label = "" + days + " Übernachtungen " + roomName;
+                } else {
+                    label = "" + days + " Übernachtung " + roomName;
+                }
                 billItems.add(Map.of(
                     "key", "accommodationPrice",
-                    "label", "Unternachtungen",
+                    "label", label,
                     "value", String.format("%.2f €", accommodationPrice)
                 ));
             }
