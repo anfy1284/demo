@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.example.demo.classes.Guest; // Import the Guest class
 import com.example.demo.services.RoomService; // Import the RoomService class
+import com.example.demo.classes.RoomOrder;
 @Service
 public class BookingService extends BaseService<Booking> {
 
@@ -44,7 +45,16 @@ private static final String BOOKINGS_FILE = "bookings.dat";
     }
 
     public void loadAllFromFile() {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(BOOKINGS_FILE))) {
+        File file = new File(BOOKINGS_FILE);
+        if (!file.exists()) {
+            System.out.println("Bookings file not found. Starting with an empty list.");
+            return;
+        }
+        if (file.length() == 0) {
+            System.out.println("Bookings file is empty. Starting with an empty list.");
+            return;
+        }
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             List<SerializableBooking> serializableBookings = (List<SerializableBooking>) ois.readObject();
             for (SerializableBooking serializableBooking : serializableBookings) {
                 Booking booking = serializableBooking.toBooking();
@@ -88,6 +98,7 @@ private static final String BOOKINGS_FILE = "bookings.dat";
         private boolean includeBreakfast;
         private String customerAddress;
         private double prepayment;
+        private List<RoomOrder> roomOrders;
 
         public static SerializableBooking fromBooking(Booking booking) {
             SerializableBooking sb = new SerializableBooking();
@@ -107,6 +118,7 @@ private static final String BOOKINGS_FILE = "bookings.dat";
             sb.includeBreakfast = booking.isIncludeBreakfast();
             sb.customerAddress = booking.getCustomerAddress();
             sb.prepayment = booking.getPrepayment();
+            sb.roomOrders = booking.getRoomOrders();
             return sb;
         }
 
@@ -128,6 +140,7 @@ private static final String BOOKINGS_FILE = "bookings.dat";
             booking.setCustomerAddress(this.customerAddress);
             booking.setPrepayment(this.prepayment);
             booking.setGuests(new ArrayList<>()); // Guests should be resolved by their IDs
+            booking.setRoomOrders(this.roomOrders != null ? this.roomOrders : new ArrayList<>());
             return booking;
         }
     }

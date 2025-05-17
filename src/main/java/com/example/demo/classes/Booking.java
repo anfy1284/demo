@@ -22,6 +22,7 @@ public class Booking {
     private boolean includeBreakfast;
     private String customerAddress;
     private double prepayment;
+    private List<RoomOrder> roomOrders = new ArrayList<>(); // Neue Tabelle für Bestellungen im Zimmer
 
     public String getID() {
         return ID;
@@ -157,6 +158,14 @@ public class Booking {
 
     public void setPrepayment(double prepayment) {
         this.prepayment = prepayment;
+    }
+
+    public List<RoomOrder> getRoomOrders() {
+        return roomOrders;
+    }
+
+    public void setRoomOrders(List<RoomOrder> roomOrders) {
+        this.roomOrders = roomOrders;
     }
 
     public String getRoomId() {

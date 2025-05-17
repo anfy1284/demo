@@ -16,7 +16,13 @@
 </head>
 <body>
     <h1>Ein Fehler ist aufgetreten</h1>
-    <p th:text="${errorMessage! 'Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.'}"></p>
+    <p>
+        <#if errorMessage??>
+            ${errorMessage}
+        <#else>
+            Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.
+        </#if>
+    </p>
     <#if errorDetails??>
         <h2>Details:</h2>
         <pre>${errorDetails}</pre>

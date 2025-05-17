@@ -27,10 +27,11 @@ import java.util.Set;
 import com.example.demo.classes.RoomPricing; // Ensure this is the correct package for RoomPricing
 import com.example.demo.services.RoomPricingService; // Ensure this is the correct package for RoomPricingService
 import java.util.Arrays;
+import com.example.demo.classes.RoomOrder;
 
 @Controller
 @DependsOn("dataInitializer")
-public class BookingController {
+public class BookingController extends BaseErrorController {
 
     private final RoomService roomService;
     private final BookingService bookingService;
@@ -120,9 +121,7 @@ public class BookingController {
             e.printStackTrace();
 
             // Возврат страницы ошибки
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            model.addAttribute("errorDetails", e.toString()); // Передаем детали ошибки
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", e.toString());
         }
     }
 
@@ -131,7 +130,7 @@ public class BookingController {
         try {
             Booking booking = bookingService.getById(id);
             if (booking == null) {
-                throw new IllegalArgumentException("Booking not found for ID: " + id);
+                return error(model, "Booking not found for ID: " + id, null);
             }
 
             // // Рассчитываем счет для текущей брони
@@ -163,8 +162,7 @@ public class BookingController {
 
             return "edit-booking";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
         }
     }
 
@@ -253,12 +251,29 @@ public class BookingController {
                 });
             booking.setGuests(guests);
 
+            // Process room orders
+            List<RoomOrder> roomOrders = new ArrayList<>();
+            allParams.keySet().stream()
+                .filter(key -> key.startsWith("roomOrders[") && key.endsWith("].bezeichnung"))
+                .forEach(key -> {
+                    String index = key.substring(11, key.indexOf("].bezeichnung"));
+                    String bezeichnung = allParams.get("roomOrders[" + index + "].bezeichnung");
+                    String preisStr = allParams.get("roomOrders[" + index + "].preis");
+                    double preis = 0.0;
+                    try {
+                        preis = preisStr != null && !preisStr.isEmpty() ? Double.parseDouble(preisStr) : 0.0;
+                    } catch (NumberFormatException ignored) {}
+                    if (bezeichnung != null && !bezeichnung.isEmpty()) {
+                        roomOrders.add(new RoomOrder(bezeichnung, preis));
+                    }
+                });
+            booking.setRoomOrders(roomOrders);
+
             // Save the booking
             bookingService.add(booking);
             return "redirect:/bookings";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
         }
     }
 
@@ -298,8 +313,7 @@ public class BookingController {
             model.addAttribute("rooms", roomService.getAll());
             return "edit-booking";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
         }
     }
 
@@ -327,8 +341,7 @@ public class BookingController {
             bookingService.add(booking);
             return "redirect:/booking/" + booking.getID();
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
         }
     }
 
@@ -640,13 +653,9 @@ public class BookingController {
             ));
             return "bill";
         } catch (Exception e) {
-            // Логируем ошибку для диагностики
             System.err.println("Error in viewBill: " + e.getMessage());
             e.printStackTrace();
-
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            model.addAttribute("errorDetails", e.toString());
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", e.toString());
         }
     }
 }

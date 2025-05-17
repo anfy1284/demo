@@ -33,10 +33,9 @@ public class AddressController {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                return ResponseEntity.status(500).body(List.of(Map.of("error", "Failed to fetch address suggestions")));
+                return error("Failed to fetch address suggestions", e);
             }
         }
-
         return ResponseEntity.ok(suggestions);
     }
 
@@ -60,11 +59,16 @@ public class AddressController {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                return ResponseEntity.status(500).body(List.of(Map.of("error", "Failed to parse address")));
+                return error("Failed to parse address", e);
             }
         }
-
         return ResponseEntity.ok(suggestions);
+    }
+
+    private ResponseEntity<List<Map<String, String>>> error(String message, Exception e) {
+        List<Map<String, String>> errorList = new ArrayList<>();
+        errorList.add(Map.of("error", message, "details", e != null ? e.toString() : ""));
+        return ResponseEntity.status(500).body(errorList);
     }
 
     private String formatAddress(Map<String, Object> address) {

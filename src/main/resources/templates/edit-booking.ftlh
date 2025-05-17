@@ -679,6 +679,39 @@
                     </button>
                 </div>
 
+                <h2>Bestellungen im Zimmer</h2>
+                <table id="roomOrdersTable">
+                    <thead>
+                        <tr>
+                            <th>Bezeichnung</th>
+                            <th>Preis (€)</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <#if booking.roomOrders?? && (booking.roomOrders?size > 0)>
+                            <#list booking.roomOrders as order>
+                                <tr>
+                                    <td>
+                                        <input type="text" name="roomOrders[${order_index}].bezeichnung" value="${order.bezeichnung}" required>
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.01" name="roomOrders[${order_index}].preis" value="${order.preis}" required>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="icon-btn" onclick="removeRoomOrderRow(this)">
+                                            <span class="material-icons">delete</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </#list>
+                        </#if>
+                    </tbody>
+                </table>
+                <button type="button" class="add-guest-btn" onclick="addRoomOrderRow()">
+                    <span class="material-icons">add</span> Bestellung hinzufügen
+                </button>
+
                 <div class="form-footer">
                     <button type="submit">Speichern</button>
                     <a href="/bookings">Abbrechen</a>
@@ -739,5 +772,27 @@
             </#if>
         </div>
     </div>
+
+    <script>
+        function addRoomOrderRow() {
+            const table = document.getElementById('roomOrdersTable').getElementsByTagName('tbody')[0];
+            const rowCount = table.rows.length;
+            const row = table.insertRow();
+            row.innerHTML = `
+                <td><input type="text" name="roomOrders[${rowCount}].bezeichnung" required></td>
+                <td><input type="number" step="0.01" name="roomOrders[${rowCount}].preis" required></td>
+                <td>
+                    <button type="button" class="icon-btn" onclick="removeRoomOrderRow(this)">
+                        <span class="material-icons">delete</span>
+                    </button>
+                </td>
+            `;
+        }
+
+        function removeRoomOrderRow(button) {
+            const row = button.parentElement.parentElement;
+            row.parentElement.removeChild(row);
+        }
+    </script>
 </body>
 </html>

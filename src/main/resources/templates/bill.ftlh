@@ -219,9 +219,35 @@
                 </td>
             </tr>
         </table>
-        <div style="text-align: center; margin-top: 20px;">
-            <button class="print-btn" onclick="window.print()">Rechnung drucken</button>
-        </div>
+
+        <!-- Вывод связанных бронирований и заказов в номер -->
+        <#if booking.roomOrders?? && (booking.roomOrders?size > 0)>
+            <h2>Bestellungen im Zimmer</h2>
+            <ul>
+                <#list booking.roomOrders as order>
+                    <li>Zimmerbestellung: ${order.bezeichnung} - ${order.preis?string("0.00")} €</li>
+                </#list>
+            </ul>
+        </#if>
+
+        <!-- Если поддерживается bill.bookings (несколько бронирований) -->
+        <#if bill.bookings?? && (bill.bookings?size > 0)>
+            <h2>Verknüpfte Buchungen:</h2>
+            <ul>
+                <#list bill.bookings as b>
+                    <li>${b.customerName} (${b.startDate} - ${b.endDate})</li>
+                    <#if b.roomOrders?? && (b.roomOrders?size > 0)>
+                        <ul>
+                            <#list b.roomOrders as order>
+                                <li>Zimmerbestellung: ${order.bezeichnung} - ${order.preis?string("0.00")} €</li>
+                            </#list>
+                        </ul>
+                    </#if>
+                </#list>
+            </ul>
+        </#if>
+
+        <button class="print-btn" onclick="window.print()">Rechnung drucken</button>
     </div>
 </body>
 </html>
