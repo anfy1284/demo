@@ -733,8 +733,8 @@
                 </tbody>
             </table>
             <#if method == "edit">
-                <button class="print-bill-btn" onclick="saveAndPrint('${booking.ID}')">
-                    <span class="material-icons">print</span> Rechnung drucken
+                <button class="create-invoice-btn" onclick="window.location.href='/invoices/create?bookingId=${booking.ID}'">
+                    <span class="material-icons">receipt</span> Rechnung erstellen
                 </button>
             </#if>
         </div>

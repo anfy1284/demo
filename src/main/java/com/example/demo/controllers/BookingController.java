@@ -134,36 +134,13 @@ public class BookingController {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
 
-            // // Рассчитываем счет для текущей брони
-            // Map<String, Object> billSectionsRaw = calculateBill(
-            //     booking.getRoom().getID(),
-            //     booking.getStartDate(),
-            //     booking.getEndDate(),
-            //     (Integer) null,
-            //     booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
-            //     booking.getDogs(),
-            //     id,
-            //     booking.isIncludeBreakfast(),
-            //     0.0 // Adding prepayment as the last argument
-            // );
-            // Map<String, List<Map<String, String>>> billSections = new HashMap<>();
-            // billSectionsRaw.forEach((key, value) -> {
-            //     if (value instanceof List) {
-            //         billSections.put(key, (List<Map<String, String>>) value);
-            //     }
-            // });
-
-            // // Отладочный вывод для проверки содержимого счета
-            // System.out.println("Bill sections: " + billSections);
-
             model.addAttribute("method", "edit");
-            model.addAttribute("booking", booking);
+            model.addAttribute("booking", booking); // Передаем объект booking в шаблон
             model.addAttribute("rooms", roomService.getAll());
-            // model.addAttribute("bill", billSections); // Передаем структуру счета в шаблон
 
             return "edit-booking";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "Ein unerwarteter Fehler ist aufgetreten.");
             return "error";
         }
     }

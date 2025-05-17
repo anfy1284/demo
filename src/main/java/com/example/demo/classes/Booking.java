@@ -24,7 +24,7 @@ public class Booking {
     private double prepayment;
 
     public String getID() {
-        return ID;
+        return ID != null && !ID.isEmpty() ? ID : ""; // Возвращаем пустую строку, если ID == null или пустой
     }
 
     public void setID(String ID) {
@@ -184,6 +184,7 @@ public class Booking {
                     field.set(booking, null);
                 }
             }
+            System.out.println("Created empty Booking instance with default values."); // Логируем создание
             return booking;
         } catch (Exception e) {
             throw new RuntimeException("Failed to create empty Booking instance", e);

@@ -7,9 +7,9 @@
             const errorMessageElement = document.querySelector('p');
             const errorMessage = errorMessageElement.innerText.trim();
             if (!errorMessage) {
-                console.error('Error occurred: Ein unerwarteter Fehler ist aufgetreten.');
+                console.error('Fehler: Ein unerwarteter Fehler ist aufgetreten.');
             } else {
-                console.error('Error occurred:', errorMessage);
+                console.error('Fehler:', errorMessage);
             }
         });
     </script>
