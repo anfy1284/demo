@@ -86,20 +86,43 @@
         const includeBreakfast = document.getElementById('includeBreakfast').checked;
         const prepayment = document.getElementById('prepayment').value || 0;
 
+        // Собираем Bestellungen im Zimmer из таблицы
+        const roomOrders = Array.from(document.querySelectorAll('#roomOrdersTable tbody tr')).map(row => {
+            const bezeichnungInput = row.querySelector('input[name^="roomOrders"][name$=".bezeichnung"]');
+            const preisInput = row.querySelector('input[name^="roomOrders"][name$=".preis"]');
+            return {
+                bezeichnung: bezeichnungInput ? bezeichnungInput.value : '',
+                preis: preisInput && preisInput.value ? parseFloat(preisInput.value) : 0
+            };
+        }).filter(order => order.bezeichnung && !isNaN(order.preis));
+
+        // Формируем roomOrdersParam для передачи на сервер
+        // Используем encodeURIComponent только для bezeichnung, а не всей строки
+        const roomOrdersParam = roomOrders.map(order =>
+            'roomOrders=' + encodeURIComponent(order.bezeichnung) + ':' + order.preis
+        );
+
         if (startDate && endDate && roomId) {
             try {
-                const response = await fetch(`/calculate-bill?roomId=` + roomId +
+                let url = `/calculate-bill?roomId=` + roomId +
                     `&startDate=` + startDate +
                     `&endDate=` + endDate +
                     `&guests=` + encodeURIComponent(guestDatesOfBirth.join(',')) +
                     `&dogs=` + dogs +
                     `&includeBreakfast=` + includeBreakfast +
-                    `&prepayment=` + prepayment);
+                    `&prepayment=` + prepayment;
+
+                // Если нет bookingId (создание новой брони), добавляем roomOrders
+                if (!window.bookingId) {
+                    url += '&' + roomOrdersParam.join('&');
+                }
+
+                const response = await fetch(url);
                 const billData = await response.json();
 
                 // Update the main bill table
                 const billTableBody = document.querySelector('#billTable tbody');
-                billTableBody.innerHTML = ''; // Clear existing rows
+                billTableBody.innerHTML = '';
                 if (billData.main) {
                     billData.main.forEach((item, index) => {
                         const row = document.createElement('tr');
@@ -120,7 +143,7 @@
 
                 // Update the Kurbeitrag table
                 const kurbeitragTableBody = document.querySelector('.bill-container table:nth-of-type(2) tbody');
-                kurbeitragTableBody.innerHTML = ''; // Clear existing rows
+                kurbeitragTableBody.innerHTML = '';
                 if (billData.kurbeitrag) {
                     billData.kurbeitrag.forEach((item, index) => {
                         const row = document.createElement('tr');
@@ -139,9 +162,42 @@
                     });
                 }
 
+                // Update the Bestellungen im Zimmer table
+                const roomOrdersTableBody = document.querySelector('#roomOrdersBillTable tbody');
+                roomOrdersTableBody.innerHTML = '';
+                let totalRoomOrders = 0;
+                roomOrders.forEach(order => {
+                    const row = document.createElement('tr');
+                    const labelCell = document.createElement('td');
+                    const valueCell = document.createElement('td');
+                    labelCell.textContent = order.bezeichnung;
+                    valueCell.textContent = order.preis.toFixed(2) + ' €';
+                    labelCell.className = 'column-description';
+                    valueCell.className = 'column-amount';
+                    row.appendChild(labelCell);
+                    row.appendChild(valueCell);
+                    roomOrdersTableBody.appendChild(row);
+                    totalRoomOrders += order.preis;
+                });
+                // Итоговая строка
+                if (roomOrders.length > 0) {
+                    const totalRow = document.createElement('tr');
+                    const totalLabel = document.createElement('td');
+                    const totalValue = document.createElement('td');
+                    totalLabel.textContent = 'Gesamt';
+                    totalValue.textContent = totalRoomOrders.toFixed(2) + ' €';
+                    totalLabel.style.fontWeight = 'bold';
+                    totalValue.style.fontWeight = 'bold';
+                    totalLabel.className = 'column-description';
+                    totalValue.className = 'column-amount';
+                    totalRow.appendChild(totalLabel);
+                    totalRow.appendChild(totalValue);
+                    roomOrdersTableBody.appendChild(totalRow);
+                }
+
                 // Update the Gesamt table
                 const totalTableBody = document.querySelector('#totalTable tbody');
-                totalTableBody.innerHTML = ''; // Clear existing rows
+                totalTableBody.innerHTML = '';
                 if (billData.gesamt) {
                     billData.gesamt.forEach(item => {
                         const row = document.createElement('tr');
@@ -201,7 +257,7 @@
             }
         } catch (error) {
             console.error('Fehler beim Speichern und Drucken:', error);
-            alert('Ein unerwarteter Fehler ist aufgetreten.');
+            alert('Ein unerwarteter Fehler ist aufетен.');
         }
     }
 
@@ -292,6 +348,35 @@
         const loadingIndicator = document.getElementById('loadingIndicator');
         loadingIndicator.style.display = show ? 'block' : 'none';
     }
+    
+    //RoomOrders
+
+    function addRoomOrderRow() {
+        const table = document.getElementById('roomOrdersTable').getElementsByTagName('tbody')[0];
+        const rowCount = table.rows.length;
+        const row = table.insertRow();
+        row.innerHTML = `
+            <td>
+                <input type="text" name="roomOrders[` + rowCount + `].bezeichnung" required style="width: 100%;">
+            </td>
+            <td>
+                <input type="number" step="0.01" name="roomOrders[` + rowCount + `].preis" required
+                    <input type="text" name="roomOrders[` + rowCount + `].bezeichnung" required style="width: 100%;">
+            </td>
+            <td>
+                <button type="button" class="icon-btn" onclick="removeRoomOrderRow(this)">
+                    <span class="material-icons">delete</span>
+                </button>
+            </td>
+        `;
+    }
+
+    function removeRoomOrderRow(button) {
+        const row = button.parentElement.parentElement;
+        row.parentElement.removeChild(row);
+    }
+
+    //RoomOrders/    
 
 //    document.addEventListener('DOMContentLoaded', async () => {
 //        await calculateBill(); // Пересчитываем прайс при загрузке страницы
@@ -385,7 +470,7 @@
             font-weight: bold;
             color: #555;
         }
-        input[type="text"], input[type="date"], textarea, select {
+        input[type="text"], input[type="date"], input[type="number"], textarea, select {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
@@ -648,9 +733,9 @@
                     <table id="guestsTable">
                         <thead>
                             <tr>
-                                <th>Name</th>
-                                <th>Geburtsdatum</th>
-                                <th></th>
+                                <th style="width: 65%;">Name</th>
+                                <th style="width: 30%;">Geburtsdatum</th>
+                                <th style="width: 5%;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -680,37 +765,40 @@
                 </div>
 
                 <h2>Bestellungen im Zimmer</h2>
-                <table id="roomOrdersTable">
-                    <thead>
-                        <tr>
-                            <th>Bezeichnung</th>
-                            <th>Preis (€)</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <#if booking.roomOrders?? && (booking.roomOrders?size > 0)>
-                            <#list booking.roomOrders as order>
-                                <tr>
-                                    <td>
-                                        <input type="text" name="roomOrders[${order_index}].bezeichnung" value="${order.bezeichnung}" required>
-                                    </td>
-                                    <td>
-                                        <input type="number" step="0.01" name="roomOrders[${order_index}].preis" value="${order.preis}" required>
-                                    </td>
-                                    <td>
-                                        <button type="button" class="icon-btn" onclick="removeRoomOrderRow(this)">
-                                            <span class="material-icons">delete</span>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </#list>
-                        </#if>
-                    </tbody>
-                </table>
-                <button type="button" class="add-guest-btn" onclick="addRoomOrderRow()">
-                    <span class="material-icons">add</span> Bestellung hinzufügen
-                </button>
+                <div class="guest-section">
+                    <table id="roomOrdersTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 65%;">Bezeichnung</th>
+                                <th style="width: 30%;">Preis&nbsp;(&euro;)</th>
+                                <th style="width: 5%;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <#if booking.roomOrders?? && (booking.roomOrders?size > 0)>
+                                <#list booking.roomOrders as order>
+                                    <tr>
+                                        <td>
+                                            <input type="text" name="roomOrders[${order_index}].bezeichnung" value="${order.bezeichnung}" required style="width: 100%;">
+                                        </td>
+                                        <td>
+                                            <input type="number" step="0.01" name="roomOrders[${order_index}].preis" value="${order.preis}" required
+                                                style="width: 100%; text-align: right; font-size: 15px; padding: 8px; border-radius: 5px; border: 1px solid #ccc;">
+                                        </td>
+                                        <td>
+                                            <button type="button" class="icon-btn" onclick="removeRoomOrderRow(this)">
+                                                <span class="material-icons">delete</span>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </#list>
+                            </#if>
+                        </tbody>
+                    </table>
+                    <button type="button" class="add-guest-btn" onclick="addRoomOrderRow()">
+                        <span class="material-icons">add</span> Bestellung hinzufügen
+                    </button>
+                </div>
 
                 <div class="form-footer">
                     <button type="submit">Speichern</button>
@@ -748,6 +836,18 @@
                 </tbody>
             </table>
 
+            <!-- Таблица Bestellungen im Zimmer -->
+            <table id="roomOrdersBillTable">
+                <thead>
+                    <tr>
+                        <th colspan="2" class="column-description">Bestellungen im Zimmer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Сюда будут добавляться строки заказов -->
+                </tbody>
+            </table>
+
             <table id="totalTable">
                 <thead>
                     <tr>
@@ -773,26 +873,5 @@
         </div>
     </div>
 
-    <script>
-        function addRoomOrderRow() {
-            const table = document.getElementById('roomOrdersTable').getElementsByTagName('tbody')[0];
-            const rowCount = table.rows.length;
-            const row = table.insertRow();
-            row.innerHTML = `
-                <td><input type="text" name="roomOrders[${rowCount}].bezeichnung" required></td>
-                <td><input type="number" step="0.01" name="roomOrders[${rowCount}].preis" required></td>
-                <td>
-                    <button type="button" class="icon-btn" onclick="removeRoomOrderRow(this)">
-                        <span class="material-icons">delete</span>
-                    </button>
-                </td>
-            `;
-        }
-
-        function removeRoomOrderRow(button) {
-            const row = button.parentElement.parentElement;
-            row.parentElement.removeChild(row);
-        }
-    </script>
 </body>
 </html>

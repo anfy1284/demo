@@ -293,12 +293,13 @@ public class BookingController extends BaseErrorController {
             }
             booking.setRoom(room);
             booking.setStartDate(date);
-            booking.setEndDate(date);
+            // Устанавливаем endDate на следующий день после startDate
+            LocalDate start = LocalDate.parse(date);
+            booking.setEndDate(start.plusDays(1).toString());
 
             // Calculate bill for the initial state
             RoomPricing roomPricing = roomPricingService.getRoomPricing(roomId);
             if (roomPricing != null) {
-                LocalDate start = LocalDate.parse(date);
                 Double dailyPrice = roomPricing.getPrice(start, 1); // Default guest count = 1
                 if (dailyPrice != null) {
                     double totalPrice = dailyPrice;
@@ -362,7 +363,9 @@ public class BookingController extends BaseErrorController {
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam(value = "bookingId", required = false) String bookingId,
             @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
-            @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment) {
+            @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment,
+            @RequestParam(value = "roomOrders", required = false) List<String> roomOrdersParam // Новый параметр
+    ) {
         Map<String, Object> billSections = new HashMap<>();
         List<Map<String, String>> billItems = new ArrayList<>();
         List<Map<String, String>> kurbeitragItems = new ArrayList<>();
@@ -578,6 +581,29 @@ public class BookingController extends BaseErrorController {
             // Итоговая строка
             totalPrice += accommodationPrice + children3To5Price + dogFee;
 
+            // --- Добавляем сумму Bestellungen im Zimmer (roomOrders) ---
+            double totalRoomOrders = 0.0;
+            if (bookingId != null) {
+                Booking booking = bookingService.getById(bookingId);
+                if (booking != null && booking.getRoomOrders() != null) {
+                    for (RoomOrder order : booking.getRoomOrders()) {
+                        totalRoomOrders += order.getPreis();
+                    }
+                }
+            } else if (roomOrdersParam != null && !roomOrdersParam.isEmpty()) {
+                // roomOrdersParam: ["bezeichnung1:preis1", "bezeichnung2:preis2", ...]
+                for (String orderStr : roomOrdersParam) {
+                    String[] parts = orderStr.split(":", 2);
+                    if (parts.length == 2) {
+                        try {
+                            double preis = Double.parseDouble(parts[1]);
+                            totalRoomOrders += preis;
+                        } catch (NumberFormatException ignored) {}
+                    }
+                }
+            }
+            totalPrice += totalRoomOrders;
+
             // Добавляем строку с итоговой суммой
             billItems.add(Map.of(
                 "key", "totalPrice",
@@ -649,7 +675,8 @@ public class BookingController extends BaseErrorController {
                 booking.getDogs(),
                 id,
                 booking.isIncludeBreakfast(),
-                0.0
+                0.0,
+                null // Pass null for roomOrdersParam
             ));
             return "bill";
         } catch (Exception e) {

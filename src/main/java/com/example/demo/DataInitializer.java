@@ -231,16 +231,16 @@ public class DataInitializer {
         RoomPricing room3Pricing = new RoomPricing(room3.getID());
         RoomPricing room4Pricing = new RoomPricing(room4.getID());
 
+        // Nebensaison Sommer
         // Периоды
         List<LocalDate[]> periods = List.of(
             new LocalDate[]{LocalDate.of(2024, 10, 6), LocalDate.of(2024, 12, 13)},
-            new LocalDate[]{LocalDate.of(2024, 12, 13), LocalDate.of(2025, 3, 9)},
             new LocalDate[]{LocalDate.of(2025, 3, 9), LocalDate.of(2025, 5, 25)},
             new LocalDate[]{LocalDate.of(2025, 11, 9), LocalDate.of(2025, 12, 14)},
             new LocalDate[]{LocalDate.of(2026, 3, 8), LocalDate.of(2026, 5, 22)},
             new LocalDate[]{LocalDate.of(2026, 11, 8), LocalDate.of(2026, 12, 13)},
             new LocalDate[]{LocalDate.of(2027, 3, 7), LocalDate.of(2027, 5, 14)}
-        );
+        );        
 
         // Цены для комнаты 1
         for (LocalDate[] period : periods) {
@@ -276,6 +276,94 @@ public class DataInitializer {
             room4Pricing.addPrice(period[0], period[1], 1, 56.00);
             room4Pricing.addPrice(period[0], period[1], 2, 69.00);
             room4Pricing.addPrice(period[0], period[1], 3, 88.50);
+        }
+
+        // Hauptsaison
+        // Периоды
+        periods = List.of(
+            new LocalDate[]{LocalDate.of(2025, 5, 25), LocalDate.of(2025, 11, 9)},
+            new LocalDate[]{LocalDate.of(2026, 5, 22), LocalDate.of(2026, 11, 8)},
+            new LocalDate[]{LocalDate.of(2027, 5, 14), LocalDate.of(2027, 11, 7)}
+        );
+        
+        // Цены для комнаты 1
+        for (LocalDate[] period : periods) {
+            room1Pricing.addPrice(period[0], period[1], 1, 83.00);
+            room1Pricing.addPrice(period[0], period[1], 2, 93.00);
+            room1Pricing.addPrice(period[0], period[1], 3, 120.00);
+            room1Pricing.addPrice(period[0], period[1], 4, 144.00);
+            room1Pricing.addPrice(period[0], period[1], 5, 167.50);
+        }
+        
+        // Цены для комнаты 2
+        for (LocalDate[] period : periods) {
+            room2Pricing.addPrice(period[0], period[1], 1, 91.00);
+            room2Pricing.addPrice(period[0], period[1], 2, 104.00);
+            room2Pricing.addPrice(period[0], period[1], 3, 129.00);
+            room2Pricing.addPrice(period[0], period[1], 4, 154.00);
+            room2Pricing.addPrice(period[0], period[1], 5, 180.00);
+            room2Pricing.addPrice(period[0], period[1], 6, 204.00);
+            room2Pricing.addPrice(period[0], period[1], 7, 231.00);
+            room2Pricing.addPrice(period[0], period[1], 8, 254.00);
+        }
+        
+        // Цены для комнаты 3
+        for (LocalDate[] period : periods) {
+            room3Pricing.addPrice(period[0], period[1], 1, 63.00);
+            room3Pricing.addPrice(period[0], period[1], 2, 77.00);
+            room3Pricing.addPrice(period[0], period[1], 3, 97.50);
+            room3Pricing.addPrice(period[0], period[1], 4, 116.00);
+        }
+
+        // Цены для комнаты 4
+        for (LocalDate[] period : periods) {
+            room4Pricing.addPrice(period[0], period[1], 1, 63.00);
+            room4Pricing.addPrice(period[0], period[1], 2, 77.00);
+            room4Pricing.addPrice(period[0], period[1], 3, 97.50);
+        }
+
+        // Nebensaison Winter
+        // Периоды
+        periods = List.of(
+            new LocalDate[]{LocalDate.of(2024, 12, 13), LocalDate.of(2025, 3, 9)},
+            new LocalDate[]{LocalDate.of(2025, 12, 14), LocalDate.of(2026, 3, 8)},
+            new LocalDate[]{LocalDate.of(2026, 12, 13), LocalDate.of(2027, 3, 7)}
+        );
+
+        // Цены для комнаты 1
+        for (LocalDate[] period : periods) {
+            room1Pricing.addPrice(period[0], period[1], 1, 86.00);
+            room1Pricing.addPrice(period[0], period[1], 2, 101.00);
+            room1Pricing.addPrice(period[0], period[1], 3, 127.50);
+            room1Pricing.addPrice(period[0], period[1], 4, 154.00);
+            room1Pricing.addPrice(period[0], period[1], 5, 180.00);
+        }
+        
+        // Цены для комнаты 2
+        for (LocalDate[] period : periods) {
+            room2Pricing.addPrice(period[0], period[1], 1, 97.00);
+            room2Pricing.addPrice(period[0], period[1], 2, 112.00);
+            room2Pricing.addPrice(period[0], period[1], 3, 138.00);
+            room2Pricing.addPrice(period[0], period[1], 4, 164.00);
+            room2Pricing.addPrice(period[0], period[1], 5, 190.00);
+            room2Pricing.addPrice(period[0], period[1], 6, 216.00);
+            room2Pricing.addPrice(period[0], period[1], 7, 241.00);
+            room2Pricing.addPrice(period[0], period[1], 8, 268.00);
+        }
+
+        // Цены для комнаты 3
+        for (LocalDate[] period : periods) {
+            room3Pricing.addPrice(period[0], period[1], 1, 70.00);
+            room3Pricing.addPrice(period[0], period[1], 2, 85.00);
+            room3Pricing.addPrice(period[0], period[1], 3, 105.00);
+            room3Pricing.addPrice(period[0], period[1], 4, 126.00);
+        }
+
+        // Цены для комнаты 4
+        for (LocalDate[] period : periods) {
+            room4Pricing.addPrice(period[0], period[1], 1, 70.00);
+            room4Pricing.addPrice(period[0], period[1], 2, 85.00);
+            room4Pricing.addPrice(period[0], period[1], 3, 105.00);
         }
 
         // Устанавливаем стоимость финальной уборки

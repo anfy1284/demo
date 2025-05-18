@@ -191,6 +191,38 @@
             </tbody>
         </table>
 
+        <!-- Вывод связанных бронирований и заказов в номер -->
+        <#if booking.roomOrders?? && (booking.roomOrders?size > 0)>
+            <table class="rechn" style="border-bottom: none;">
+                <thead>
+                    <tr>
+                        <th colspan="2" class="column-description" style="text-align: center;">Bestellungen im Zimmer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <#assign totalRoomOrders = 0>
+                    <#list booking.roomOrders as order>
+                        <tr>
+                            <td class="column-description">${order.bezeichnung}</td>
+                            <td class="column-amount">${order.preis?string("0.00")} €</td>
+                        </tr>
+                        <#assign totalRoomOrders = totalRoomOrders + order.preis>
+                    </#list>
+                    <tr style="border-bottom: 1px solid #000;">
+                        <td class="column-description" style="font-weight: bold;">Gesamt</td>
+                        <td class="column-amount" style="font-weight: bold;">
+                            ${totalRoomOrders?string("0.00")} €
+                        </td>
+                    </tr>
+                    <tr style="border-bottom: none;">
+                        <td class="column-description" colspan="2" style="font-weight: normal; border-bottom: none;">
+                            In diesem Betrag sind 19% (${(totalRoomOrders * 0.19)?string("0.00")} €) MwSt. enthalten
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </#if>
+
         <table id="totalTable" class="rechn">
             <thead>
                 <tr>
@@ -219,16 +251,6 @@
                 </td>
             </tr>
         </table>
-
-        <!-- Вывод связанных бронирований и заказов в номер -->
-        <#if booking.roomOrders?? && (booking.roomOrders?size > 0)>
-            <h2>Bestellungen im Zimmer</h2>
-            <ul>
-                <#list booking.roomOrders as order>
-                    <li>Zimmerbestellung: ${order.bezeichnung} - ${order.preis?string("0.00")} €</li>
-                </#list>
-            </ul>
-        </#if>
 
         <!-- Если поддерживается bill.bookings (несколько бронирований) -->
         <#if bill.bookings?? && (bill.bookings?size > 0)>
