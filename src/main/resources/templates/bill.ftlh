@@ -83,29 +83,38 @@
         }
         @media print {
             @page {
-                margin: 0; /* Убираем поля страницы */
+                margin: 0;
+                size: A4 portrait;
+            }
+            html, body {
+                width: 210mm;
+                height: 297mm;
+                background: white !important;
+                overflow: hidden !important;
             }
             body {
-                background-color: white;
-                box-shadow: none;
-                margin: 0;
-                padding: 0;
-            }
-            .print-btn {
-                display: none;
+                zoom: 1;
+                display: flex;
+                justify-content: center;
+                align-items: flex-start;
             }
             .bill-container {
                 box-shadow: none;
-                padding-top: 0px;
-                margin: 0; /* Убираем отступы */
-                position: static; /* Убираем центрирование */
-                padding-left: 2.5cm; /* Добавляем отступ слева 2 см */
+                margin: 0;
+                position: static;
+                padding: 0;
+                width: 100vw;
+                height: auto;
+                transform-origin: top center;
+            }
+            .print-btn {
+                display: none !important;
             }
         }
     </style>
 </head>
 <body>
-    <div class="bill-container" style="padding-top: 0px;"> <!-- Уменьшаем верхний отступ -->
+    <div class="bill-container" style="padding-top: 0px;">
         <table style="width: 100%; border-collapse: collapse;">
             <tr>
                 <td style="border-bottom: 1px solid #000;"></td> <!-- Делаем нижнюю границу черной -->
@@ -271,5 +280,23 @@
 
         <button class="print-btn" onclick="window.print()">Rechnung drucken</button>
     </div>
+    <script>
+        window.onbeforeprint = function() {
+            var pageHeight = 1122; // px for A4 at 96dpi
+            var content = document.querySelector('.bill-container');
+            if (!content) return;
+            // Исключаем высоту кнопки из расчета
+            var printBtn = content.querySelector('.print-btn');
+            var btnHeight = printBtn ? printBtn.offsetHeight : 0;
+            var contentHeight = content.scrollHeight - btnHeight;
+            var scale = Math.min(1, pageHeight / contentHeight);
+            content.style.transform = 'scale(' + scale + ')';
+            content.style.transformOrigin = 'top center';
+        };
+        window.onafterprint = function() {
+            var content = document.querySelector('.bill-container');
+            if (content) content.style.transform = '';
+        };
+    </script>
 </body>
 </html>

@@ -522,8 +522,13 @@
             background-color: #f4f4f4;
             font-weight: bold;
         }
+        /* Добавлено: убираем нижний отступ у guestsTable и roomOrdersTable */
+        #guestsTable,
+        #roomOrdersTable {
+            margin-bottom: 0;
+        }
         .add-guest-btn {
-            margin-top: 10px;
+            margin-top: 0;
             background-color: #007bff;
             align-self: flex-start;
         }
@@ -567,10 +572,11 @@
         .bill-container table td:nth-child(2) {
             width: 90px;
         }
-        .guest-section {
+        .guest-section { 
             display: flex;
             flex-direction: column;
             gap: 10px;
+            margin-bottom: 20px;
         }
         .print-bill-btn {
             background-color: #007bff;
