@@ -28,6 +28,7 @@ import com.example.demo.classes.RoomPricing; // Ensure this is the correct packa
 import com.example.demo.services.RoomPricingService; // Ensure this is the correct package for RoomPricingService
 import java.util.Arrays;
 import com.example.demo.classes.RoomOrder;
+import java.util.LinkedHashMap;
 
 @Controller
 @DependsOn("dataInitializer")
@@ -382,16 +383,15 @@ public class BookingController extends BaseErrorController {
             @RequestParam(value = "bookingId", required = false) String bookingId,
             @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
             @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment,
-            @RequestParam(value = "roomOrders", required = false) List<String> roomOrdersParam // Новый параметр
+            @RequestParam(value = "roomOrders", required = false) List<String> roomOrdersParam
     ) {
         Map<String, Object> billSections = new HashMap<>();
-        List<Map<String, String>> billItems = new ArrayList<>();
-        List<Map<String, String>> kurbeitragItems = new ArrayList<>();
-        List<Map<String, String>> gesamtItems = new ArrayList<>();
+        List<Map<String, Object>> billItemsRaw = new ArrayList<>();
         double totalPrice = 0.0;
+        double totalKurbeitrag = 0.0;
+        double totalRoomOrders = 0.0;
 
         try {
-            // Учитываем предоплату из параметра, если она передана
             if (bookingId != null && prepayment == 0.0) {
                 Booking booking = bookingService.getById(bookingId);
                 if (booking != null) {
@@ -410,7 +410,7 @@ public class BookingController extends BaseErrorController {
                 guestDatesOfBirth = booking.getGuests().stream()
                         .map(Guest::getDateOfBirth)
                         .toList();
-                dogs = booking.getDogs(); // Исправлено: добавлен метод getDogs в Booking
+                dogs = booking.getDogs();
             }
 
             if (roomId == null || startDate == null || endDate == null) {
@@ -424,7 +424,7 @@ public class BookingController extends BaseErrorController {
 
             LocalDate start = LocalDate.parse(startDate);
             LocalDate end = LocalDate.parse(endDate);
-            long days = start.datesUntil(end.plusDays(1)).count() - 1; // Calculate the number of nights
+            long days = start.datesUntil(end.plusDays(1)).count() - 1;
 
             double accommodationPrice = 0.0;
             double priceForChildren3To5 = roomPricing.getPriceForChildren3To5();
@@ -434,7 +434,7 @@ public class BookingController extends BaseErrorController {
             int children3To5Count = 0;
             int childrenUnder3Count = 0;
             int children6To15Count = 0;
-            
+
             Room room = roomService.getById(roomId);
             String roomName = "";
             if (room != null) {
@@ -460,105 +460,110 @@ public class BookingController extends BaseErrorController {
                 }
             }
 
-            // Рассчитываем стоимость проживания для взрослых
             Double dailyPriceForAdults = roomPricing.getPrice(start, adultGuestCount + children6To15Count);
             if (dailyPriceForAdults == null) {
                 throw new IllegalArgumentException("No pricing available for the given date and adult guest count.");
             }
             accommodationPrice += dailyPriceForAdults * days;
 
-            // Рассчитываем стоимость для детей от 3 до 5 лет
             double children3To5Price = children3To5Count * priceForChildren3To5 * days;
-
-            // Рассчитываем стоимость за собак
             double dogFee = dogs * roomPricing.getDogFeePerNight() * days;
 
-            // Рассчитываем курортный сбор
             double kurbeitragUnder6 = childrenUnder3Count * roomPricing.getKurbeitragUnder6() * days;
             double kurbeitrag6To15 = children6To15Count * roomPricing.getKurbeitrag6To15() * days;
             double kurbeitrag16AndOlder = adultGuestCount * roomPricing.getKurbeitrag16AndOlder() * days;
-            double totalKurbeitrag = kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
+            totalKurbeitrag = kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
 
-            // Add Kurbeitrag items to a separate list
+            // Курортный сбор
             if (kurbeitragUnder6 > 0) {
-                kurbeitragItems.add(Map.of(
+                double gross = kurbeitragUnder6;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                billItemsRaw.add(Map.of(
                     "key", "kurbeitragUnder6",
-                    "label", "0-5 Jahre",
-                    "value", String.format("%.2f €", kurbeitragUnder6)
+                    "label", "Kurabgabe 0-5 Jahre",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
                 ));
             }
             if (kurbeitrag6To15 > 0) {
-                kurbeitragItems.add(Map.of(
+                double gross = kurbeitrag6To15;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                billItemsRaw.add(Map.of(
                     "key", "kurbeitrag6To15",
-                    "label", "6-15 Jahre",
-                    "value", String.format("%.2f €", kurbeitrag6To15)
+                    "label", "Kurabgabe 6-15 Jahre",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
                 ));
             }
             if (kurbeitrag16AndOlder > 0) {
-                kurbeitragItems.add(Map.of(
+                double gross = kurbeitrag16AndOlder;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                billItemsRaw.add(Map.of(
                     "key", "kurbeitrag16AndOlder",
-                    "label", "16+ Jahre",
-                    "value", String.format("%.2f €", kurbeitrag16AndOlder)
+                    "label", "Kurabgabe 16+ Jahre",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            if (totalKurbeitrag > 0) {
+                double gross = totalKurbeitrag;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                billItemsRaw.add(Map.of(
+                    "key", "totalKurbeitrag",
+                    "label", "Kurabgabe Gesamt",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
                 ));
             }
 
-            // Add total row for Kurbeitrag
-            kurbeitragItems.add(Map.of(
-                "key", "totalKurbeitrag",
-                "label", "Gesamt",
-                "value", String.format("%.2f €", totalKurbeitrag)
-            ));
+            // --- Сбор позиций по категориям ---
+            List<Map<String, Object>> uebernachtungItems = new ArrayList<>();
+            List<Map<String, Object>> breakfastItems = new ArrayList<>();
+            List<Map<String, Object>> kurbeitragItems = new ArrayList<>();
+            List<Map<String, Object>> otherItems = new ArrayList<>();
 
-            // Add other bill items to the main list
+            // --- Основные услуги (ночевки) ---
             if (accommodationPrice > 0) {
-                String label = "";
-                if (days > 1) {
-                    label = "" + days + " Übernachtungen " + roomName;
-                } else {
-                    label = "" + days + " Übernachtung " + roomName;
-                }
-                billItems.add(Map.of(
+                double gross = accommodationPrice;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                String label = days > 1 ? (days + " Übernachtungen " + roomName) : (days + " Übernachtung " + roomName);
+                uebernachtungItems.add(Map.of(
                     "key", "accommodationPrice",
                     "label", label,
-                    "value", String.format("%.2f €", accommodationPrice)
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
                 ));
             }
             if (children3To5Price > 0) {
-                billItems.add(Map.of(
+                double gross = children3To5Price;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                uebernachtungItems.add(Map.of(
                     "key", "children3To5Price",
                     "label", "Kinderpreis (3-5 Jahre)",
-                    "value", String.format("%.2f €", children3To5Price)
-                ));
-            }
-            /*
-            if (childrenUnder3Count > 0) {
-                billItems.add(Map.of(
-                    "key", "childrenUnder3Price",
-                    "label", "Kinderpreis (0-2 Jahre, kostenlos)",
-                    "value", "0.00 €"
-                ));
-            }
-            */
-            if (dogFee > 0) {
-                billItems.add(Map.of(
-                    "key", "dogFee",
-                    "label", "Gebühr für den Hund",
-                    "value", String.format("%.2f €", dogFee)
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
                 ));
             }
 
-            // Добавляем стоимость финальной уборки для короткого пребывания
-            if (days <= 3) {
-                double finalCleaningFee = roomPricing.getFinalCleaningFeeShortStay();
-                billItems.add(Map.of(
-                    "key", "finalCleaningFee",
-                    "label", "Endreinigung (Kurzaufenthalt)",
-                    "value", String.format("%.2f €", finalCleaningFee)
-                ));
-                totalPrice += finalCleaningFee;
-            }
-
-            // Добавляем стоимость завтраков по категориям
+            // --- Завтраки ---
             if (includeBreakfast) {
                 double breakfastPriceUnder3 = childrenUnder3Count * roomPricing.getBreakfastPriceUnder3() * days;
                 double breakfastPrice3To5 = children3To5Count * roomPricing.getBreakfastPrice3To5() * days;
@@ -566,98 +571,284 @@ public class BookingController extends BaseErrorController {
                 double breakfastPrice14AndOlder = adultGuestCount * roomPricing.getBreakfastPrice14AndOlder() * days;
 
                 if (breakfastPriceUnder3 > 0) {
-                    billItems.add(Map.of(
+                    double gross = breakfastPriceUnder3;
+                    double net = gross / 1.19;
+                    double tax = gross - net;
+                    breakfastItems.add(Map.of(
                         "key", "breakfastPriceUnder3",
                         "label", "Frühstück (0-2 Jahre)",
-                        "value", String.format("%.2f €", breakfastPriceUnder3)
+                        "value", String.format("%.2f €", gross),
+                        "net", String.format("%.2f €", net),
+                        "tax", String.format("%.2f €", tax),
+                        "taxRate", 19
                     ));
                 }
                 if (breakfastPrice3To5 > 0) {
-                    billItems.add(Map.of(
+                    double gross = breakfastPrice3To5;
+                    double net = gross / 1.19;
+                    double tax = gross - net;
+                    breakfastItems.add(Map.of(
                         "key", "breakfastPrice3To5",
                         "label", "Frühstück (3-5 Jahre)",
-                        "value", String.format("%.2f €", breakfastPrice3To5)
+                        "value", String.format("%.2f €", gross),
+                        "net", String.format("%.2f €", net),
+                        "tax", String.format("%.2f €", tax),
+                        "taxRate", 19
                     ));
                 }
                 if (breakfastPrice6To13 > 0) {
-                    billItems.add(Map.of(
+                    double gross = breakfastPrice6To13;
+                    double net = gross / 1.19;
+                    double tax = gross - net;
+                    breakfastItems.add(Map.of(
                         "key", "breakfastPrice6To13",
                         "label", "Frühstück (6-13 Jahre)",
-                        "value", String.format("%.2f €", breakfastPrice6To13)
+                        "value", String.format("%.2f €", gross),
+                        "net", String.format("%.2f €", net),
+                        "tax", String.format("%.2f €", tax),
+                        "taxRate", 19
                     ));
                 }
                 if (breakfastPrice14AndOlder > 0) {
-                    billItems.add(Map.of(
+                    double gross = breakfastPrice14AndOlder;
+                    double net = gross / 1.19;
+                    double tax = gross - net;
+                    breakfastItems.add(Map.of(
                         "key", "breakfastPrice14AndOlder",
                         "label", "Frühstück (14+ Jahre)",
-                        "value", String.format("%.2f €", breakfastPrice14AndOlder)
+                        "value", String.format("%.2f €", gross),
+                        "net", String.format("%.2f €", net),
+                        "tax", String.format("%.2f €", tax),
+                        "taxRate", 19
                     ));
                 }
                 totalPrice += breakfastPriceUnder3 + breakfastPrice3To5 + breakfastPrice6To13 + breakfastPrice14AndOlder;
             }
 
-            // Итоговая строка
-            totalPrice += accommodationPrice + children3To5Price + dogFee;
+            // --- Курортные сборы ---
+            if (kurbeitragUnder6 > 0) {
+                double gross = kurbeitragUnder6;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                kurbeitragItems.add(Map.of(
+                    "key", "kurbeitragUnder6",
+                    "label", "Kurabgabe 0-5 Jahre",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            if (kurbeitrag6To15 > 0) {
+                double gross = kurbeitrag6To15;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                kurbeitragItems.add(Map.of(
+                    "key", "kurbeitrag6To15",
+                    "label", "Kurabgabe 6-15 Jahre",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            if (kurbeitrag16AndOlder > 0) {
+                double gross = kurbeitrag16AndOlder;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                kurbeitragItems.add(Map.of(
+                    "key", "kurbeitrag16AndOlder",
+                    "label", "Kurabgabe 16+ Jahre",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            if (totalKurbeitrag > 0) {
+                double gross = totalKurbeitrag;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                kurbeitragItems.add(Map.of(
+                    "key", "totalKurbeitrag",
+                    "label", "Kurabgabe Gesamt",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
 
-            // --- Добавляем сумму Bestellungen im Zimmer (roomOrders) ---
-            double totalRoomOrders = 0.0;
+            // --- Прочие позиции ---
+            if (dogFee > 0) {
+                double gross = dogFee;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                otherItems.add(Map.of(
+                    "key", "dogFee",
+                    "label", "Gebühr für den Hund",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+
+            if (days <= 3) {
+                double gross = roomPricing.getFinalCleaningFeeShortStay();
+                double net = gross / 1.19;
+                double tax = gross - net;
+                otherItems.add(Map.of(
+                    "key", "finalCleaningFee",
+                    "label", "Endreinigung (Kurzaufenthalt)",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+                totalPrice += gross;
+            }
+
+            // Bestellungen im Zimmer
             if (bookingId != null) {
                 Booking booking = bookingService.getById(bookingId);
                 if (booking != null && booking.getRoomOrders() != null) {
                     for (RoomOrder order : booking.getRoomOrders()) {
-                        totalRoomOrders += order.getPreis();
+                        double gross = order.getPreis();
+                        double net = gross / 1.19;
+                        double tax = gross - net;
+                        totalRoomOrders += gross;
+                        otherItems.add(Map.of(
+                            "key", "roomOrder",
+                            "label", order.getBezeichnung(),
+                            "value", String.format("%.2f €", gross),
+                            "net", String.format("%.2f €", net),
+                            "tax", String.format("%.2f €", tax),
+                            "taxRate", 19
+                        ));
                     }
                 }
             } else if (roomOrdersParam != null && !roomOrdersParam.isEmpty()) {
-                // roomOrdersParam: ["bezeichnung1:preis1", "bezeichnung2:preis2", ...]
                 for (String orderStr : roomOrdersParam) {
                     String[] parts = orderStr.split(":", 2);
                     if (parts.length == 2) {
                         try {
                             double preis = Double.parseDouble(parts[1]);
+                            double gross = preis;
+                            double net = gross / 1.19;
+                            double tax = gross - net;
                             totalRoomOrders += preis;
+                            otherItems.add(Map.of(
+                                "key", "roomOrder",
+                                "label", java.net.URLDecoder.decode(parts[0], java.nio.charset.StandardCharsets.UTF_8),
+                                "value", String.format("%.2f €", gross),
+                                "net", String.format("%.2f €", net),
+                                "tax", String.format("%.2f €", tax),
+                                "taxRate", 19
+                            ));
                         } catch (NumberFormatException ignored) {}
                     }
                 }
             }
             totalPrice += totalRoomOrders;
 
-            // Добавляем строку с итоговой суммой
-            billItems.add(Map.of(
-                "key", "totalPrice",
-                "label", "Betrag",
-                "value", String.format("%.2f €", totalPrice)
-            ));
+            // Итоговые строки (Betrag, Anzahlung, Restbetrag)
+            List<Map<String, Object>> totalItems = new ArrayList<>();
+            {
+                double gross = totalPrice;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                totalItems.add(Map.of(
+                    "key", "totalPrice",
+                    "label", "Betrag",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            {
+                double gross = prepayment;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                totalItems.add(Map.of(
+                    "key", "prepayment",
+                    "label", "Anzahlung",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            {
+                double gross = totalPrice + totalKurbeitrag - prepayment;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                totalItems.add(Map.of(
+                    "key", "totalSum",
+                    "label", "Restbetrag",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
 
-            // Вычисляем 7% MwSt от итоговой суммы
-            double mwst = totalPrice * 0.07;
+            // --- Собираем итоговый список в нужном порядке ---
+            billItemsRaw.addAll(uebernachtungItems);
+            billItemsRaw.addAll(breakfastItems);
+            billItemsRaw.addAll(kurbeitragItems);
+            billItemsRaw.addAll(otherItems);
+            billItemsRaw.addAll(totalItems);
 
-            // Добавляем строки в раздел "Gesamt"
-            gesamtItems.add(Map.of(
-                "key", "prepayment",
-                "label", "Anzahlung",
-                "value", String.format("%.2f €", prepayment)
-            ));
-            gesamtItems.add(Map.of(
-                "key", "totalSum",
-                "label", "Restbetrag",
-                "value", String.format("%.2f €", totalPrice + totalKurbeitrag - prepayment)
-            ));
-
-            // Добавляем все разделы в ответ
-            billSections.put("main", billItems);
-            billSections.put("kurbeitrag", kurbeitragItems);
-            billSections.put("gesamt", gesamtItems);
-            billSections.put("mwst", String.format("%.2f €", mwst)); // Добавляем MwSt в ответ
+            // --- Суммирование одинаковых позиций по label и taxRate ---
+            billSections.put("main", mergeBillItemsByLabelAndTaxRate(billItemsRaw));
+            billSections.put("mwst", String.format("%.2f €", totalPrice * 0.19 / 1.19));
 
         } catch (Exception e) {
-            billItems.add(Map.of(
+            billSections.put("main", List.of(Map.of(
                 "key", "error",
                 "label", "Fehler",
-                "value", e.getMessage()
-            ));
+                "value", e.getMessage(),
+                "net", "0.00 €",
+                "tax", "0.00 €",
+                "taxRate", 19
+            )));
+            billSections.put("mwst", "0.00 €");
         }
         return billSections;
+    }
+
+    // --- Новый метод для суммирования одинаковых позиций ---
+    private List<Map<String, Object>> mergeBillItemsByLabelAndTaxRate(List<Map<String, Object>> items) {
+        Map<String, Map<String, Object>> merged = new LinkedHashMap<>();
+        for (Map<String, Object> item : items) {
+            String label = (String) item.get("label");
+            Object taxRateObj = item.get("taxRate");
+            String key = label + "|" + (taxRateObj != null ? taxRateObj.toString() : "null");
+            double value = parseEuro(item.get("value"));
+            double net = parseEuro(item.get("net"));
+            double tax = parseEuro(item.get("tax"));
+            if (merged.containsKey(key)) {
+                Map<String, Object> prev = merged.get(key);
+                prev.put("value", String.format("%.2f €", parseEuro(prev.get("value")) + value));
+                prev.put("net", String.format("%.2f €", parseEuro(prev.get("net")) + net));
+                prev.put("tax", String.format("%.2f €", parseEuro(prev.get("tax")) + tax));
+            } else {
+                merged.put(key, new LinkedHashMap<>(item));
+            }
+        }
+        return new ArrayList<>(merged.values());
+    }
+
+    private double parseEuro(Object euroString) {
+        if (euroString == null) return 0.0;
+        String str = euroString.toString().replace("€", "").replace(" ", "").replace(",", ".").trim();
+        try {
+            return Double.parseDouble(str);
+        } catch (Exception e) {
+            return 0.0;
+        }
     }
 
     @GetMapping("/booking/{id}/bill")
