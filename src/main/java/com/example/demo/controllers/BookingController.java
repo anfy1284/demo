@@ -91,8 +91,8 @@ public class BookingController extends BaseErrorController {
                 LocalDate bookingEnd = LocalDate.parse(booking.getEndDate());
                 for (LocalDate date = bookingStart; !date.isAfter(bookingEnd); date = date.plusDays(1)) {
                     String dateKey = date.format(formatter);
-                    if (bookingsMap.containsKey(dateKey)) {
-                        bookingsMap.get(dateKey).put(booking.getRoomId(), booking);
+                    if (bookingsMap.containsKey(dateKey) && booking.getRoom() != null) {
+                        bookingsMap.get(dateKey).put(booking.getRoom().getID(), booking);
                     }
                 }
                 // Добавляем информацию о продолжительности бронирования
@@ -176,7 +176,11 @@ public class BookingController extends BaseErrorController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
-            @RequestParam(value = "customerAddress", required = false) String customerAddress,
+            @RequestParam(value = "customerStreet", required = false) String customerStreet,
+            @RequestParam(value = "customerHouseNumber", required = false) String customerHouseNumber,
+            @RequestParam(value = "customerPostalCode", required = false) String customerPostalCode,
+            @RequestParam(value = "customerCity", required = false) String customerCity,
+            @RequestParam(value = "customerCountry", required = false) String customerCountry,
             @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment,
             @RequestParam Map<String, String> allParams,
             Model model) {
@@ -218,9 +222,13 @@ public class BookingController extends BaseErrorController {
             booking.setStartDate(startDate);
             booking.setEndDate(endDate);
             booking.setDescription(description);
-            booking.setDogs(dogs); // Устанавливаем количество собак
-            booking.setIncludeBreakfast(includeBreakfast); // Устанавливаем флаг завтраков
-            booking.setCustomerAddress(customerAddress); // Устанавливаем адрес клиента
+            booking.setDogs(dogs);
+            booking.setIncludeBreakfast(includeBreakfast);
+            booking.setCustomerStreet(customerStreet);
+            booking.setCustomerHouseNumber(customerHouseNumber);
+            booking.setCustomerPostalCode(customerPostalCode);
+            booking.setCustomerCity(customerCity);
+            booking.setCustomerCountry(customerCountry);
             booking.setPrepayment(prepayment);
 
             // Debug: Log all keys in allParams
@@ -324,7 +332,12 @@ public class BookingController extends BaseErrorController {
             @RequestParam("roomId") String roomId,
             @RequestParam("customerName") String customerName,
             @RequestParam("description") String description,
-            @RequestParam(value = "customerAddress", required = false) String customerAddress,
+            // @RequestParam(value = "customerAddress", required = false) String customerAddress, // Удалить
+            @RequestParam(value = "customerStreet", required = false) String customerStreet,
+            @RequestParam(value = "customerHouseNumber", required = false) String customerHouseNumber,
+            @RequestParam(value = "customerPostalCode", required = false) String customerPostalCode,
+            @RequestParam(value = "customerCity", required = false) String customerCity,
+            @RequestParam(value = "customerCountry", required = false) String customerCountry,
             Model model) {
         try {
             Room room = roomService.getById(roomId);
@@ -338,7 +351,12 @@ public class BookingController extends BaseErrorController {
             booking.setDescription(description);
             booking.setRoom(room);
             booking.setStatus("booked");
-            booking.setCustomerAddress(customerAddress); // Set customer address
+            // booking.setCustomerAddress(customerAddress); // Удалить
+            booking.setCustomerStreet(customerStreet);
+            booking.setCustomerHouseNumber(customerHouseNumber);
+            booking.setCustomerPostalCode(customerPostalCode);
+            booking.setCustomerCity(customerCity);
+            booking.setCustomerCountry(customerCountry);
             bookingService.add(booking);
             return "redirect:/booking/" + booking.getID();
         } catch (Exception e) {
@@ -650,20 +668,32 @@ public class BookingController extends BaseErrorController {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
 
+            // Формируем адрес для отображения
+            List<String> customerAddressLines = new ArrayList<>();
+            if (booking.getCustomerStreet() != null && !booking.getCustomerStreet().isEmpty()) {
+                String line1 = (booking.getCustomerStreet() != null ? booking.getCustomerStreet() : "") +
+                               (booking.getCustomerHouseNumber() != null && !booking.getCustomerHouseNumber().isEmpty() ? " " + booking.getCustomerHouseNumber() : "");
+                customerAddressLines.add(line1.trim());
+            }
+            if (booking.getCustomerPostalCode() != null && booking.getCustomerCity() != null &&
+                !booking.getCustomerPostalCode().isEmpty() && !booking.getCustomerCity().isEmpty()) {
+                customerAddressLines.add((booking.getCustomerPostalCode() + " " + booking.getCustomerCity()).trim());
+            }
+            if (booking.getCustomerCountry() != null && !booking.getCustomerCountry().isEmpty()) {
+                customerAddressLines.add(booking.getCustomerCountry());
+            }
+
             // Форматируем даты в формате "ДД.мм.ГГГГ"
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
             String formattedStartDate = LocalDate.parse(booking.getStartDate()).format(formatter);
             String formattedEndDate = LocalDate.parse(booking.getEndDate()).format(formatter);
-
-            // Разделяем адрес клиента на строки
-            String[] customerAddressLines = booking.getCustomerAddress().split(",");
 
             // Добавляем текущую дату в модель
             String currentDate = LocalDate.now().format(formatter);
             model.addAttribute("currentDate", currentDate);
             model.addAttribute("formattedStartDate", formattedStartDate);
             model.addAttribute("formattedEndDate", formattedEndDate);
-            model.addAttribute("customerAddressLines", Arrays.asList(customerAddressLines));
+            model.addAttribute("customerAddressLines", customerAddressLines);
 
             model.addAttribute("booking", booking);
             model.addAttribute("bill", calculateBill(

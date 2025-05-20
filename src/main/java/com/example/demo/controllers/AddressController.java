@@ -53,8 +53,8 @@ public class AddressController {
                 if (response != null) {
                     for (Map<String, Object> result : response) {
                         Map<String, Object> address = (Map<String, Object>) result.get("address");
-                        String formattedAddress = formatAddress(address);
-                        suggestions.add(Map.of("formattedAddress", formattedAddress));
+                        Map<String, String> formatted = formatAddressParts(address);
+                        suggestions.add(formatted);
                     }
                 }
             } catch (Exception e) {
@@ -71,18 +71,21 @@ public class AddressController {
         return ResponseEntity.status(500).body(errorList);
     }
 
-    private String formatAddress(Map<String, Object> address) {
-        if (address == null) return "Unknown Address";
+    private Map<String, String> formatAddressParts(Map<String, Object> address) {
+        if (address == null) return Map.of();
 
-        String city = (String) address.getOrDefault("city", address.getOrDefault("town", address.getOrDefault("village", "")));
-        String state = (String) address.getOrDefault("state", "");
-        String country = (String) address.getOrDefault("country", "");
-        String road = (String) address.getOrDefault("road", "");
+        String street = (String) address.getOrDefault("road", "");
         String houseNumber = (String) address.getOrDefault("house_number", "");
+        String postalCode = (String) address.getOrDefault("postcode", "");
+        String city = (String) address.getOrDefault("city", address.getOrDefault("town", address.getOrDefault("village", "")));
+        String country = (String) address.getOrDefault("country", "");
 
-        // Формируем полный адрес
-        return String.join(", ", List.of(houseNumber, road, city, state, country).stream()
-                .filter(part -> part != null && !part.isEmpty())
-                .toArray(String[]::new));
+        return Map.of(
+            "street", street,
+            "houseNumber", houseNumber,
+            "postalCode", postalCode,
+            "city", city,
+            "country", country
+        );
     }
 }

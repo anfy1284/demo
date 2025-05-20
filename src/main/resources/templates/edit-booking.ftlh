@@ -386,32 +386,6 @@
 
     document.addEventListener('DOMContentLoaded', () => {
 
-        document.getElementById('customerAddress').addEventListener('keydown', (event) => {
-            const suggestionsList = document.getElementById('addressSuggestions');
-            const items = suggestionsList.querySelectorAll('.suggestion-item');
-
-            if (event.key === 'ArrowDown') {
-                event.preventDefault();
-                if (selectedSuggestionIndex < items.length - 1) {
-                    highlightSuggestion(selectedSuggestionIndex + 1);
-                } else if (selectedSuggestionIndex === -1 && items.length > 0) {
-                    highlightSuggestion(0); // Выделяем первый элемент, если ничего не выделено
-                }
-            } else if (event.key === 'ArrowUp') {
-                event.preventDefault();
-                if (selectedSuggestionIndex > 0) {
-                    highlightSuggestion(selectedSuggestionIndex - 1);
-                }
-            } else if (event.key === 'Enter') {
-                event.preventDefault();
-                if (selectedSuggestionIndex >= 0) {
-                    selectSuggestion(items[selectedSuggestionIndex].dataset.value);
-                }
-            } else if (event.key === 'Escape') {
-                clearSuggestions();
-            }
-        });
-
         document.getElementById('prepayment').addEventListener('change', calculateBill); // Вызываем calculateBill при изменении предоплаты
 
         calculateBill();
@@ -696,14 +670,34 @@
                 <label for="customerName">Kundenname:</label>
                 <input type="text" id="customerName" name="customerName" value="${booking.customerName}" required>
 
-                <label for="customerAddress">Adresse des Kunden:</label>
-                <div style="position: relative;">
-                    <input type="text" id="customerAddress" name="customerAddress" 
-                           value="<#if booking.customerAddress??>${booking.customerAddress}<#else></#if>" 
-                           placeholder="Adresse eingeben" oninput="fetchAddressSuggestions(this.value)" autocomplete="off" required>
-                    <div id="loadingIndicator" class="loading-indicator" style="display: none;">Laden...</div>
-                    <ul id="addressSuggestions" class="suggestions-list"></ul>
-                </div>
+                <!-- Адрес: визуально сгруппировано и компактно -->
+                <fieldset style="border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-bottom: 18px;">
+                    <legend style="font-weight: bold; color: #555; font-size: 15px;">Adresse des Kunden</legend>
+                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <div style="flex: 2;">
+                            <label for="customerStreet" style="margin-bottom: 3px;">Straße</label>
+                            <input type="text" id="customerStreet" name="customerStreet" value="${booking.customerStreet!}" required>
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="customerHouseNumber" style="margin-bottom: 3px;">Nr.</label>
+                            <input type="text" id="customerHouseNumber" name="customerHouseNumber" value="${booking.customerHouseNumber!}" required>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label for="customerPostalCode" style="margin-bottom: 3px;">PLZ</label>
+                            <input type="text" id="customerPostalCode" name="customerPostalCode" value="${booking.customerPostalCode!}" required>
+                        </div>
+                        <div style="flex: 2;">
+                            <label for="customerCity" style="margin-bottom: 3px;">Ort</label>
+                            <input type="text" id="customerCity" name="customerCity" value="${booking.customerCity!}" required>
+                        </div>
+                        <div style="flex: 2;">
+                            <label for="customerCountry" style="margin-bottom: 3px;">Land</label>
+                            <input type="text" id="customerCountry" name="customerCountry" value="${booking.customerCountry!}" required>
+                        </div>
+                    </div>
+                </fieldset>
 
                 <label for="startDate">Anfangsdatum:</label>
                 <input type="date" id="startDate" name="startDate" value="${booking.startDate}" onchange="calculateBill()" required>

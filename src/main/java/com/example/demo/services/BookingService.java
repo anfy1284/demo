@@ -74,6 +74,16 @@ private static final String BOOKINGS_FILE = "bookings.dat";
 
                 add(booking, false); // Добавляем в память без сохранения в файл
             }
+        } catch (InvalidClassException e) {
+            // Если несовпадает serialVersionUID, переименовываем файл и продолжаем с пустым списком
+            System.err.println("Incompatible bookings file format (serialVersionUID mismatch). Renaming old file.");
+            File backup = new File(BOOKINGS_FILE + ".backup_" + System.currentTimeMillis());
+            if (file.renameTo(backup)) {
+                System.err.println("Old bookings file renamed to: " + backup.getName());
+            } else {
+                System.err.println("Failed to rename old bookings file. Please remove it manually: " + file.getAbsolutePath());
+            }
+            // После этого items останется пустым
         } catch (FileNotFoundException e) {
             System.out.println("Bookings file not found. Starting with an empty list.");
         } catch (IOException | ClassNotFoundException e) {
@@ -82,6 +92,7 @@ private static final String BOOKINGS_FILE = "bookings.dat";
     }
 
     private static class SerializableBooking implements Serializable {
+        private static final long serialVersionUID = -3143241779869315133L; // <-- Установите это значение и не меняйте его при изменениях структуры!
         private String id;
         private String roomId;
         private String customerName;
@@ -96,7 +107,12 @@ private static final String BOOKINGS_FILE = "bookings.dat";
         private int duration;
         private int dogs;
         private boolean includeBreakfast;
-        private String customerAddress;
+        // private String customerAddress; // Удалить
+        private String customerStreet;
+        private String customerHouseNumber;
+        private String customerPostalCode;
+        private String customerCity;
+        private String customerCountry;
         private double prepayment;
         private List<RoomOrder> roomOrders;
 
@@ -116,7 +132,12 @@ private static final String BOOKINGS_FILE = "bookings.dat";
             sb.duration = booking.getDuration();
             sb.dogs = booking.getDogs();
             sb.includeBreakfast = booking.isIncludeBreakfast();
-            sb.customerAddress = booking.getCustomerAddress();
+            // sb.customerAddress = booking.getCustomerAddress(); // Удалить
+            sb.customerStreet = booking.getCustomerStreet();
+            sb.customerHouseNumber = booking.getCustomerHouseNumber();
+            sb.customerPostalCode = booking.getCustomerPostalCode();
+            sb.customerCity = booking.getCustomerCity();
+            sb.customerCountry = booking.getCustomerCountry();
             sb.prepayment = booking.getPrepayment();
             sb.roomOrders = booking.getRoomOrders();
             return sb;
@@ -137,7 +158,12 @@ private static final String BOOKINGS_FILE = "bookings.dat";
             booking.setDuration(this.duration);
             booking.setDogs(this.dogs);
             booking.setIncludeBreakfast(this.includeBreakfast);
-            booking.setCustomerAddress(this.customerAddress);
+            // booking.setCustomerAddress(this.customerAddress); // Удалить
+            booking.setCustomerStreet(this.customerStreet);
+            booking.setCustomerHouseNumber(this.customerHouseNumber);
+            booking.setCustomerPostalCode(this.customerPostalCode);
+            booking.setCustomerCity(this.customerCity);
+            booking.setCustomerCountry(this.customerCountry);
             booking.setPrepayment(this.prepayment);
             booking.setGuests(new ArrayList<>()); // Guests should be resolved by their IDs
             booking.setRoomOrders(this.roomOrders != null ? this.roomOrders : new ArrayList<>());

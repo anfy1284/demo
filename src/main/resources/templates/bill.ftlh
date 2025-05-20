@@ -143,9 +143,15 @@
                 <td class="column-description" style="width: 70%; font-weight: normal;">
                     <strong>${booking.customerName}</strong><br>
                     <br>
-                    <#list customerAddressLines as line>
-                        ${line}<br>
-                    </#list>
+                    <#if booking.customerStreet?? && booking.customerHouseNumber??>
+                        ${booking.customerStreet} ${booking.customerHouseNumber}<br>
+                    </#if>
+                    <#if booking.customerPostalCode?? && booking.customerCity??>
+                        ${booking.customerPostalCode} ${booking.customerCity}<br>
+                    </#if>
+                    <#if booking.customerCountry??>
+                        ${booking.customerCountry}<br>
+                    </#if>
                 </td>
                 <td class="column-amount" style="text-align: right; font-weight: normal; vertical-align: top;">
                     ${currentDate}

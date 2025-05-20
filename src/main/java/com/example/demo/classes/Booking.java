@@ -20,7 +20,12 @@ public class Booking {
     private int duration;
     private int dogs;
     private boolean includeBreakfast;
-    private String customerAddress;
+    // Новые поля для адреса клиента
+    private String customerStreet;
+    private String customerHouseNumber;
+    private String customerPostalCode;
+    private String customerCity;
+    private String customerCountry;
     private double prepayment;
     private List<RoomOrder> roomOrders = new ArrayList<>(); // Neue Tabelle für Bestellungen im Zimmer
 
@@ -144,12 +149,44 @@ public class Booking {
         this.includeBreakfast = includeBreakfast;
     }
 
-    public String getCustomerAddress() {
-        return customerAddress;
+    public String getCustomerStreet() {
+        return customerStreet;
     }
 
-    public void setCustomerAddress(String customerAddress) {
-        this.customerAddress = customerAddress;
+    public void setCustomerStreet(String customerStreet) {
+        this.customerStreet = customerStreet;
+    }
+
+    public String getCustomerHouseNumber() {
+        return customerHouseNumber;
+    }
+
+    public void setCustomerHouseNumber(String customerHouseNumber) {
+        this.customerHouseNumber = customerHouseNumber;
+    }
+
+    public String getCustomerPostalCode() {
+        return customerPostalCode;
+    }
+
+    public void setCustomerPostalCode(String customerPostalCode) {
+        this.customerPostalCode = customerPostalCode;
+    }
+
+    public String getCustomerCity() {
+        return customerCity;
+    }
+
+    public void setCustomerCity(String customerCity) {
+        this.customerCity = customerCity;
+    }
+
+    public String getCustomerCountry() {
+        return customerCountry;
+    }
+
+    public void setCustomerCountry(String customerCountry) {
+        this.customerCountry = customerCountry;
     }
 
     public double getPrepayment() {
