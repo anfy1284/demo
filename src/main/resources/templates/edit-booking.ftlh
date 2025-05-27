@@ -668,7 +668,7 @@
                 </select>
 
                 <label for="customerName">Kundenname:</label>
-                <input type="text" id="customerName" name="customerName" value="${booking.customerName}" required>
+                <input type="text" id="customerName" name="customerName" value="${booking.customerName!""}">
 
                 <!-- Адрес: визуально сгруппировано и компактно -->
                 <fieldset style="border: 1px solid #ccc; border-radius: 6px; padding: 15px; margin-bottom: 18px;">
@@ -676,25 +676,25 @@
                     <div style="display: flex; gap: 10px; margin-bottom: 10px;">
                         <div style="flex: 2;">
                             <label for="customerStreet" style="margin-bottom: 3px;">Straße</label>
-                            <input type="text" id="customerStreet" name="customerStreet" value="${booking.customerStreet!}" required>
+                            <input type="text" id="customerStreet" name="customerStreet" value="${booking.customerStreet!""}">
                         </div>
                         <div style="flex: 1;">
                             <label for="customerHouseNumber" style="margin-bottom: 3px;">Nr.</label>
-                            <input type="text" id="customerHouseNumber" name="customerHouseNumber" value="${booking.customerHouseNumber!}" required>
+                            <input type="text" id="customerHouseNumber" name="customerHouseNumber" value="${booking.customerHouseNumber!""}">
                         </div>
                     </div>
                     <div style="display: flex; gap: 10px;">
                         <div style="flex: 1;">
                             <label for="customerPostalCode" style="margin-bottom: 3px;">PLZ</label>
-                            <input type="text" id="customerPostalCode" name="customerPostalCode" value="${booking.customerPostalCode!}" required>
+                            <input type="text" id="customerPostalCode" name="customerPostalCode" value="${booking.customerPostalCode!""}">
                         </div>
                         <div style="flex: 2;">
                             <label for="customerCity" style="margin-bottom: 3px;">Ort</label>
-                            <input type="text" id="customerCity" name="customerCity" value="${booking.customerCity!}" required>
+                            <input type="text" id="customerCity" name="customerCity" value="${booking.customerCity!""}">
                         </div>
                         <div style="flex: 2;">
                             <label for="customerCountry" style="margin-bottom: 3px;">Land</label>
-                            <input type="text" id="customerCountry" name="customerCountry" value="${booking.customerCountry!}" required>
+                            <input type="text" id="customerCountry" name="customerCountry" value="${booking.customerCountry!""}">
                         </div>
                     </div>
                 </fieldset>

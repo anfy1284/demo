@@ -20,8 +20,8 @@
         }
         .header {
             display: flex;
-            justify-content: flex-start;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-start;
             gap: 30px;
             margin-bottom: 10px;
         }
@@ -34,6 +34,7 @@
             font-size: 13px;
             line-height: 1.5;
             color: #333;
+            margin-left: auto;
         }
         h1, h2 {
             text-align: center;
@@ -147,51 +148,125 @@
             </div>
         </div>
         <div style="border-bottom: 1px solid #000; margin-bottom: 10px;"></div>
-        <div class="address-block">
-            <strong>${booking.customerName}</strong><br>
-            <#if booking.customerStreet?? && booking.customerHouseNumber??>
-                ${booking.customerStreet} ${booking.customerHouseNumber}<br>
-            </#if>
-            <#if booking.customerPostalCode?? && booking.customerCity??>
-                ${booking.customerPostalCode} ${booking.customerCity}<br>
-            </#if>
-            <#if booking.customerCountry??>
-                ${booking.customerCountry}<br>
-            </#if>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0;">
+            <div class="address-block" style="margin-bottom: 0;">
+                <strong>${booking.customerName}</strong><br>
+                <#if booking.customerStreet?? && booking.customerHouseNumber??>
+                    ${booking.customerStreet} ${booking.customerHouseNumber}<br>
+                </#if>
+                <#if booking.customerPostalCode?? && booking.customerCity??>
+                    ${booking.customerPostalCode} ${booking.customerCity}<br>
+                </#if>
+                <#if booking.customerCountry??>
+                    ${booking.customerCountry}<br>
+                </#if>
+            </div>
+            <div class="address-block">
+                ${currentDate}
+            </div>
         </div>
-        <div style="text-align: right; font-size: 14px; color: #444;">
-            ${currentDate}
-        </div>
-        <h1>Rechnung Nr. ${booking.ID}</h1>
-        <div style="text-align: center; margin-bottom: 14px;">
-            <strong>Leistungsnachweis vom ${formattedStartDate} bis zum ${formattedEndDate}</strong>
-        </div>
+        <h2>Rechnung Nr. ${booking.ID}</h2>
         <table class="invoice-table">
             <thead>
                 <tr>
                     <th style="width: 38%;">Leistung / Beschreibung</th>
-                    <th style="width: 18%;">Brutto&nbsp;(&euro;)</th>
-                    <th style="width: 18%;">Netto&nbsp;(&euro;)</th>
-                    <th style="width: 13%;">MwSt.-Satz&nbsp;(%)</th>
-                    <th style="width: 13%;">MwSt.&nbsp;(&euro;)</th>
+                    <th style="width: 13%;">MwSt.-Satz</th>
+                    <th style="width: 13%;">MwSt.</th>
+                    <th style="width: 18%;">Gesamtpreis</th>
                 </tr>
             </thead>
             <tbody>
                 <#if bill?has_content && bill.main?has_content>
                     <#list bill.main as item>
                         <#assign isTotal = item.key?has_content && (item.key == "totalPrice" || item.key == "prepayment" || item.key == "totalSum")>
-                        <tr class="<#if isTotal>highlight-row</#if>">
+                        <#if !isTotal>
+                        <tr>
                             <td>${item.label}</td>
-                            <td>${item.value}</td>
-                            <td>${item.net}</td>
-                            <#-- Для итоговых строк не показываем ставку налога -->
-                            <#if isTotal>
-                                <td></td>
-                            <#else>
-                                <td>${item.taxRate}</td>
-                            </#if>
-                            <td>${item.tax}</td>
+                            <td>
+                                <#if item.taxRate?has_content>
+                                    <#if item.taxRate?number == 0>
+                                        -
+                                    <#else>
+                                        ${item.taxRate}%
+                                    </#if>
+                                <#else>
+                                    -
+                                </#if>
+                            </td>
+                            <td>
+                                <#if item.tax?has_content && (item.tax == "0.00" || item.tax == "0.00 €" || item.tax == "0" || item.tax == "0.0" || item.tax == "0,00 €")>
+                                    -
+                                <#else>
+                                    ${item.tax}
+                                </#if>
+                            </td>
+                            <td>
+                                <#if item.value?has_content && (item.value == "0.00" || item.value == "0.00 €" || item.value == "0" || item.value == "0.0" || item.value == "0,00 €")>
+                                    -
+                                <#else>
+                                    ${item.value}
+                                </#if>
+                            </td>
                         </tr>
+                        </#if>
+                    </#list>
+                </#if>
+                <#-- Итоговые суммы налогов по ставкам -->
+                <#if bill?has_content && bill.mwst?has_content>
+                    <#list bill.mwst as mwstItem>
+                        <tr class="summary-row">
+                            <td style="text-align: left;">
+                                <#-- Вытаскиваем % из label, если есть -->
+                                <#if mwstItem.label?contains("%")>
+                                    <#assign parts = mwstItem.label?split("%")>
+                                    <#if parts[0]?replace("MwSt. ","")?trim == "0">
+                                        MwSt. -
+                                    <#else>
+                                        MwSt. <span>${parts[0]?replace("MwSt. ","")?trim}</span>%
+                                    </#if>
+                                <#elseif mwstItem.label == "MwSt. 0%">
+                                    MwSt. -
+                                <#elseif mwstItem.label?lower_case?contains("gesamt")>
+                                    ${mwstItem.label}
+                                <#else>
+                                    ${mwstItem.label}
+                                </#if>
+                            </td>
+                            <td colspan="1"></td>
+                            <td>${mwstItem.value}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </#list>
+                </#if>
+                <#-- Итоговые строки (Betrag, Anzahlung, Restbetrag) в самом низу таблицы -->
+                <#if bill?has_content && bill.main?has_content>
+                    <#list bill.main as item>
+                        <#assign isTotal = item.key?has_content && (item.key == "totalPrice" || item.key == "prepayment" || item.key == "totalSum")>
+                        <#if isTotal>
+                            <#if item.key == "totalSum">
+                                <tr class="highlight-row">
+                                    <td style="text-align: left;">${item.label}</td>
+                                    <td colspan="3">
+                                        <#if item.net?has_content && (item.net == "0.00" || item.net == "0.00 €" || item.net == "0" || item.net == "0.0" || item.net == "0,00 €")>
+                                            -
+                                        <#else>
+                                            ${item.net}
+                                        </#if>
+                                    </td>
+                                </tr>
+                            <#else>
+                                <tr class="summary-row">
+                                    <td style="text-align: left;">${item.label}</td>
+                                    <td colspan="3">
+                                        <#if item.net?has_content && (item.net == "0.00" || item.net == "0.00 €" || item.net == "0" || item.net == "0.0" || item.net == "0,00 €")>
+                                            -
+                                        <#else>
+                                            ${item.net}
+                                        </#if>
+                                    </td>
+                                </tr>
+                            </#if>
+                        </#if>
                     </#list>
                 </#if>
             </tbody>
