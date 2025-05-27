@@ -96,6 +96,43 @@
         .print-btn:hover {
             background-color: #0056b3;
         }
+        .navbar {
+            width: 100%;
+            background: #1a237e;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            padding: 0 0 0 24px;
+            height: 56px;
+            box-shadow: 0 2px 8px rgba(26,35,126,0.08);
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin: 0;
+            z-index: 1000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+        }
+        .navbar a {
+            color: #fff;
+            text-decoration: none;
+            margin-right: 32px;
+            padding: 0 8px;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid transparent;
+            transition: border-bottom 0.2s, color 0.2s;
+        }
+        .navbar a.active, .navbar a:hover {
+            color: #ffeb3b;
+            border-bottom: 2px solid #ffeb3b;
+        }
+        .bill-container {
+            margin-top: 56px; /* чтобы не перекрывалось меню */
+        }
         @media print {
             @page {
                 margin: 12mm 12mm 0 12mm; /* Добавлены отступы сверху, слева и справа */
@@ -129,10 +166,17 @@
             .print-btn {
                 display: none !important;
             }
+            .navbar {
+                display: none !important;
+            }
         }
     </style>
 </head>
 <body>
+    <div class="navbar">
+        <a href="/bookings">Kalender</a>
+        <a href="/bookings-list">Buchungen</a>
+    </div>
     <div class="bill-container">
         <div style="border-top: 1px solid #000; margin-bottom: 10px;"></div>
         <div class="header">

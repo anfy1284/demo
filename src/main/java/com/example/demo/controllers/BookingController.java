@@ -956,4 +956,34 @@ public class BookingController extends BaseErrorController {
             return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", e.toString());
         }
     }
+
+    @GetMapping("/bookings-list")
+    public String bookingsList(
+            @RequestParam(value = "q", required = false) String q,
+            Model model) {
+        // Убираем дубликаты по ID
+        List<Booking> all = bookingService.getAll();
+        Map<String, Booking> unique = new LinkedHashMap<>();
+        for (Booking b : all) {
+            if (b.getID() != null && !unique.containsKey(b.getID())) {
+                unique.put(b.getID(), b);
+            }
+        }
+        List<Booking> filtered;
+        if (q != null && !q.trim().isEmpty()) {
+            String query = q.trim().toLowerCase();
+            filtered = unique.values().stream().filter(b ->
+                (b.getCustomerName() != null && b.getCustomerName().toLowerCase().contains(query)) ||
+                (b.getRoom() != null && b.getRoom().getName() != null && b.getRoom().getName().toLowerCase().contains(query)) ||
+                (b.getStartDate() != null && b.getStartDate().contains(query)) ||
+                (b.getEndDate() != null && b.getEndDate().contains(query)) ||
+                (b.getDescription() != null && b.getDescription().toLowerCase().contains(query))
+            ).toList();
+        } else {
+            filtered = new ArrayList<>(unique.values());
+        }
+        model.addAttribute("bookings", filtered);
+        model.addAttribute("q", q);
+        return "bookings-list";
+    }
 }
