@@ -180,4 +180,17 @@ private static final String BOOKINGS_FILE = "bookings.dat";
     protected void onItemAdded(Booking booking) {
         saveAllToFile(); // Сохраняем в файл только если это явно указано
     }
+
+    public List<Booking> getAll() {
+        // Возвращаем только уникальные брони по ID, в порядке добавления
+        List<Booking> unique = new ArrayList<>();
+        java.util.HashSet<String> seen = new java.util.HashSet<>();
+        for (Booking b : items) {
+            if (b.getID() != null && !seen.contains(b.getID())) {
+                unique.add(b);
+                seen.add(b.getID());
+            }
+        }
+        return unique;
+    }
 }

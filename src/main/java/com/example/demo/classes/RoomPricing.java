@@ -128,6 +128,11 @@ public class RoomPricing {
         this.breakfastPrice14AndOlder = breakfastPrice14AndOlder;
     }
 
+    // Универсальный метод для получения стандартной цены завтрака (например, для взрослых)
+    public double getBreakfastPrice() {
+        return breakfastPrice14AndOlder;
+    }
+
     // Добавить цену для определённого периода и количества гостей
     public void addPrice(LocalDate startDate, LocalDate endDate, int numberOfGuests, double price) {
         if (startDate == null || endDate == null || numberOfGuests <= 0 || price <= 0) {

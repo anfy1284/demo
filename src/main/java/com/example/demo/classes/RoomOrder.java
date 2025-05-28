@@ -29,4 +29,20 @@ public class RoomOrder implements Serializable {
     public void setPreis(double preis) {
         this.preis = preis;
     }
+
+    // Для совместимости с RoomPricingService.calculateBill
+    public double getPrice() {
+        return getPreis();
+    }
+
+    public String getName() {
+        return getBezeichnung();
+    }
+
+    public String getId() {
+        // Можно возвращать bezeichnung или добавить отдельное поле id
+        return bezeichnung;
+    }
+
+    // ...конструкторы, equals, hashCode, toString если нужно...
 }

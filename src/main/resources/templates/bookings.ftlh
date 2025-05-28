@@ -148,12 +148,34 @@
             color: #ffeb3b;
             border-bottom: 2px solid #ffeb3b;
         }
+        .navbar a.menu-btn {
+            margin-left: 0;
+            background: none;
+            color: #fff;
+            border-radius: 0;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 500;
+            box-shadow: none;
+            padding: 0 8px;
+            border-bottom: 2px solid transparent;
+            transition: border-bottom 0.2s, color 0.2s;
+        }
+        .navbar a.menu-btn:hover,
+        .navbar a.menu-btn.active {
+            color: #ffeb3b;
+            border-bottom: 2px solid #ffeb3b;
+            background: none;
+        }
     </style>
 </head>
 <body>
     <div class="navbar">
         <a href="/bookings" class="active">Kalender</a>
         <a href="/bookings-list">Buchungen</a>
+        <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
     <h1>Buchungen für ${month}/${year}</h1>
     <div class="month-navigation">
