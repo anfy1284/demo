@@ -31,25 +31,66 @@ public class InvoiceUtil {
                 allItems.addAll(main);
             }
         }
-        // Группируем одинаковые позиции по label и taxRate
+        // Группируем одинаковые позиции по label и taxRate, но сохраняем порядок появления ключей
+        // Определяем порядок ключей для группировки (например, Übernachtungen, Kinderpreis, Frühstück, Kurbeitrag, Hundепр., Endreinigung, Zusatzleistung, Betrag, Anzahlung, Restbetrag)
+        List<String> keyOrder = List.of(
+            "accommodationPrice",
+            "children3To5Price",
+            "breakfastPrice",
+            "breakfastPriceUnder3",
+            "breakfastPrice3To5",
+            "breakfastPrice6To13",
+            "breakfastPrice14AndOlder",
+            "kurbeitragUnder6",
+            "kurbeitrag6To15",
+            "kurbeitrag16AndOlder",
+            "dogFee",
+            "finalCleaningFee",
+            "roomOrder",
+            "totalPrice",
+            "prepayment",
+            "totalSum"
+        );
         Map<String, Map<String, Object>> merged = new LinkedHashMap<>();
+        Map<String, String> keyToFirstKey = new HashMap<>(); // key -> first encountered key for ordering
+
         for (Map<String, Object> item : allItems) {
+            String key = (String) item.get("key");
             String label = (String) item.get("label");
             Object taxRateObj = item.get("taxRate");
-            String key = label + "|" + (taxRateObj != null ? taxRateObj.toString() : "null");
+            String mergeKey = label + "|" + (taxRateObj != null ? taxRateObj.toString() : "null");
             double value = parseEuro(item.get("value"));
             double net = parseEuro(item.get("net"));
             double tax = parseEuro(item.get("tax"));
-            if (merged.containsKey(key)) {
-                Map<String, Object> prev = merged.get(key);
+            if (merged.containsKey(mergeKey)) {
+                Map<String, Object> prev = merged.get(mergeKey);
                 prev.put("value", String.format("%.2f €", parseEuro(prev.get("value")) + value));
                 prev.put("net", String.format("%.2f €", parseEuro(prev.get("net")) + net));
                 prev.put("tax", String.format("%.2f €", parseEuro(prev.get("tax")) + tax));
             } else {
-                merged.put(key, new LinkedHashMap<>(item));
+                merged.put(mergeKey, new LinkedHashMap<>(item));
+                if (key != null && !keyToFirstKey.containsKey(key)) {
+                    keyToFirstKey.put(key, mergeKey);
+                }
             }
         }
-        List<Map<String, Object>> main = new ArrayList<>(merged.values());
+        // Собираем итоговый список в правильном порядке
+        List<Map<String, Object>> main = new ArrayList<>();
+        for (String k : keyOrder) {
+            for (String mergeKey : merged.keySet()) {
+                Map<String, Object> item = merged.get(mergeKey);
+                if (k.equals(item.get("key"))) {
+                    main.add(item);
+                }
+            }
+        }
+        // Добавляем оставшиеся (если есть)
+        for (String mergeKey : merged.keySet()) {
+            Map<String, Object> item = merged.get(mergeKey);
+            if (!main.contains(item)) {
+                main.add(item);
+            }
+        }
         Map<String, Object> result = new HashMap<>();
         result.put("main", main);
         // Можно добавить расчет итогов и налогов аналогично bill.ftlh

@@ -176,7 +176,7 @@
         <a href="/invoice/new" class="menu-btn active">Rechnung erstellen</a>
     </div>
     <div class="invoice-container">
-        <div class="invoice-controls">
+        <div class="invoice-controls" id="invoiceControls">
             <h2>Buchungen für Rechnung</h2>
             <form id="invoiceForm" onsubmit="return false;">
                 <label for="bookingSelect">Buchung hinzufügen:</label>
@@ -224,5 +224,31 @@
             window.location = '/invoice/new?remove=' + encodeURIComponent(id);
         }
     </script>
+    <style>
+        @media print {
+            #invoiceControls, .invoice-controls {
+                display: none !important;
+            }
+            .invoice-main, #invoiceMain {
+                flex: none !important;
+                max-width: 100vw !important;
+                width: 100vw !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                box-shadow: none !important;
+            }
+            .invoice-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+                display: block !important;
+            }
+            body {
+                background: white !important;
+            }
+        }
+    </style>
 </body>
 </html>
