@@ -309,35 +309,23 @@ public class BookingController extends BaseErrorController {
 
     @GetMapping("/create-booking")
     public String createBookingForm(
-            @RequestParam("date") String date,
-            @RequestParam("roomId") String roomId,
+            @RequestParam(value = "date", required = false) String date,
+            @RequestParam(value = "roomId", required = false) String roomId,
             Model model) {
         try {
-            Room room = roomService.getById(roomId);
-            if (room == null) {
-                throw new IllegalArgumentException("Room not found for ID: " + roomId);
-            }
             Booking booking = Booking.createEmpty();
-            if (booking == null) { // Reintroduce null check
-                throw new IllegalArgumentException("Failed to create a new booking instance.");
-            }
-            booking.setRoom(room);
-            booking.setStartDate(date);
-            // Устанавливаем endDate на следующий день после startDate
-            LocalDate start = LocalDate.parse(date);
-            booking.setEndDate(start.plusDays(1).toString());
-
-            // Calculate bill for the initial state
-            RoomPricing roomPricing = roomPricingService.getRoomPricing(roomId);
-            if (roomPricing != null) {
-                Double dailyPrice = roomPricing.getPrice(start, 1); // Default guest count = 1
-                if (dailyPrice != null) {
-                    double totalPrice = dailyPrice;
-                    Map<String, Object> bill = new HashMap<>();
-                    bill.put("accommodationPrice", String.format("%.2f", dailyPrice));
-                    bill.put("totalPrice", String.format("%.2f", totalPrice));
-                    model.addAttribute("bill", bill);
+            if (roomId != null && !roomId.isEmpty()) {
+                Room room = roomService.getById(roomId);
+                if (room == null) {
+                    throw new IllegalArgumentException("Room not found for ID: " + roomId);
                 }
+                booking.setRoom(room);
+            }
+            if (date != null && !date.isEmpty()) {
+                booking.setStartDate(date);
+                // Устанавливаем endDate на следующий день после startDate
+                LocalDate start = LocalDate.parse(date);
+                booking.setEndDate(start.plusDays(1).toString());
             }
             model.addAttribute("method", "create");
             model.addAttribute("booking", booking);

@@ -177,6 +177,24 @@
         <a href="/bookings-list">Buchungen</a>
         <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
+    <div style="max-width:1200px;margin:24px auto 0 auto;display:flex;justify-content:flex-end;">
+        <a href="/create-booking" id="add-booking-btn" style="
+            display:inline-flex;
+            align-items:center;
+            background:#43a047;
+            color:#fff;
+            padding:10px 18px;
+            border-radius:6px;
+            font-size:16px;
+            font-weight:500;
+            text-decoration:none;
+            box-shadow:0 2px 8px rgba(67,160,71,0.08);
+            gap:8px;
+        ">
+            <span class="material-icons" style="font-size:20px;">add</span>
+            Buchung hinzufügen
+        </a>
+    </div>
     <h1>Buchungen für ${month}/${year}</h1>
     <div class="month-navigation">
         <form action="/bookings/${previousYear}/${previousMonth}" method="get">
@@ -236,5 +254,30 @@
             </tbody>
         </table>
     </div>
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Если пользователь кликнул на ячейку календаря, запоминаем дату и комнату
+    let selectedDate = null;
+    let selectedRoomId = null;
+
+    // Пример: предполагается, что у ячеек есть data-date и data-room-id
+    document.querySelectorAll('.calendar-cell').forEach(cell => {
+        cell.addEventListener('click', function() {
+            selectedDate = this.getAttribute('data-date');
+            selectedRoomId = this.getAttribute('data-room-id');
+            // Подсветить выбранную ячейку, если нужно
+        });
+    });
+
+    // При клике на кнопку Buchung hinzufügen — если выбраны дата и комната, подставляем их в ссылку
+    document.getElementById('add-booking-btn').addEventListener('click', function(e) {
+        if (selectedDate && selectedRoomId) {
+            e.preventDefault();
+            window.location.href = `/create-booking?date=${encodeURIComponent(selectedDate)}&roomId=${encodeURIComponent(selectedRoomId)}`;
+        }
+        // иначе — стандартное поведение (форма без параметров)
+    });
+});
+</script>
 </body>
 </html>

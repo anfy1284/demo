@@ -114,41 +114,41 @@ public class RoomPricingService {
         }
         if (kurbeitragUnder6 > 0) {
             double gross = kurbeitragUnder6;
-            double net = gross / 1.19;
-            double tax = gross - net;
+            double net = gross; // Нет налога
+            double tax = 0.0;
             billItems.add(Map.of(
                 "key", "kurbeitragUnder6",
                 "label", "Kurbeitrag (unter 6 Jahre)",
                 "value", String.format("%.2f €", gross),
                 "net", String.format("%.2f €", net),
                 "tax", String.format("%.2f €", tax),
-                "taxRate", 19
+                "taxRate", 0
             ));
         }
         if (kurbeitrag6To15 > 0) {
             double gross = kurbeitrag6To15;
-            double net = gross / 1.19;
-            double tax = gross - net;
+            double net = gross; // Нет налога
+            double tax = 0.0;
             billItems.add(Map.of(
                 "key", "kurbeitrag6To15",
                 "label", "Kurbeitrag (6-15 Jahre)",
                 "value", String.format("%.2f €", gross),
                 "net", String.format("%.2f €", net),
                 "tax", String.format("%.2f €", tax),
-                "taxRate", 19
+                "taxRate", 0
             ));
         }
         if (kurbeitrag16AndOlder > 0) {
             double gross = kurbeitrag16AndOlder;
-            double net = gross / 1.19;
-            double tax = gross - net;
+            double net = gross; // Нет налога
+            double tax = 0.0;
             billItems.add(Map.of(
                 "key", "kurbeitrag16AndOlder",
                 "label", "Kurbeitrag (ab 16 Jahre)",
                 "value", String.format("%.2f €", gross),
                 "net", String.format("%.2f €", net),
                 "tax", String.format("%.2f €", tax),
-                "taxRate", 19
+                "taxRate", 0
             ));
         }
         if (dogFee > 0) {
