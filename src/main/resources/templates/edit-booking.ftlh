@@ -485,6 +485,10 @@
                 <button class="add-to-invoice-btn" onclick="addToInvoice('${booking.ID}')">
                     <span class="material-icons">playlist_add</span> Zur Rechnung hinzufügen
                 </button>
+            <#elseif method == "create">
+                <button class="add-to-invoice-btn" onclick="saveAndAddToInvoice()">
+                    <span class="material-icons">playlist_add</span> Zur Rechnung hinzufügen
+                </button>
             </#if>
         </div>
     </div>
@@ -597,7 +601,6 @@
 
         async function addToInvoice(bookingId) {
             try {
-                // Отправляем запрос на сервер
                 await fetch(`/invoice/add`, {
                     method: 'POST',
                     headers: {
@@ -605,11 +608,71 @@
                     },
                     body: JSON.stringify({ bookingId })
                 });
-
             } catch (error) {
                 console.error('Fehler beim Hinzufügen zur Rechnung:', error);
             }
         }
+
+        async function saveAndAddToInvoice() {
+            try {
+                const form = document.querySelector('form');
+                const formData = new FormData(form);
+
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+
+                const contentType = response.headers.get('content-type') || '';
+                if (response.ok) {
+                    console.log('Server response:', response);
+                    if (contentType.includes('application/json')) {
+                        const data = await response.json();
+                        if (data && data.bookingId) {
+                            await addToInvoice(data.bookingId);
+                        }
+                    } else {
+                        alert('Fehler: Server hat kein JSON zurückgegeben.');
+                    }
+                } else {
+                    let errorMsg = "Fehler beim Speichern der Buchung";
+                    if (contentType.includes('application/json')) {
+                        try {
+                            const data = await response.json();
+                            if (data && data.error) errorMsg = data.error;
+                        } catch (e) {
+                            // ignore
+                        }
+                    } else {
+                        // Если не JSON, возможно HTML-страница ошибки
+                        const text = await response.text();
+                        if (text && text.startsWith('<!DOCTYPE')) {
+                            errorMsg = "Fehler beim Speichern der Buchung (HTML-Aнтwort vom Server)";
+                        }
+                    }
+                    alert(errorMsg);
+                }
+            } catch (error) {
+                console.error('Fehler beim Speichern и Hinzufügen zur Rechnung:', error);
+                alert('Fehler beim Speichern и Hinzufügen zur Rechnung.');
+            }
+        }
+
+        // Удалить этот блок:
+        // Для автоматического добавления в счет после редиректа
+    //    document.addEventListener('DOMContentLoaded', async () => {
+    //        const url = new URL(window.location.href);
+    //        if (url.searchParams.get('addToInvoice') === '1') {
+    //            // Получаем ID из URL
+    //            const match = window.location.pathname.match(/\/booking\/([^\/]+)/);
+    //            if (match && match[1]) {
+    //                await addToInvoice(match[1]);
+    //                url.searchParams.delete('addToInvoice');
+    //                window.history.replaceState({}, '', url.pathname + url.search);
+    //            }
+    //        }
+    //    });
 
         let selectedSuggestionIndex = -1;
 
@@ -734,13 +797,13 @@
 
     //    document.addEventListener('DOMContentLoaded', calculateBill); // Пересчет прайса при открытии страницы
 
-        document.addEventListener('DOMContentLoaded', () => {
+    //    document.addEventListener('DOMContentLoaded', () => {
 
-            document.getElementById('prepayment').addEventListener('change', calculateBill); // Вызываем calculateBill при изменении предоплаты
+    //        document.getElementById('prepayment').addEventListener('change', calculateBill); // Вызываем calculateBill при изменении предоплаты
 
-            calculateBill();
+    //        calculateBill();
 
-        });    
+    //    });    
 
     </script>
 

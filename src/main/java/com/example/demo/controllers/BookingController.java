@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -172,7 +175,7 @@ public class BookingController extends BaseErrorController {
     }
 
     @PostMapping("/booking/{id}")
-    public String updateBooking(
+    public Object updateBooking(
             @PathVariable("id") String id,
             @RequestParam("roomId") String roomId,
             @RequestParam("customerName") String customerName,
@@ -188,6 +191,7 @@ public class BookingController extends BaseErrorController {
             @RequestParam(value = "customerCountry", required = false) String customerCountry,
             @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment,
             @RequestParam Map<String, String> allParams,
+            jakarta.servlet.http.HttpServletRequest request,
             Model model) {
         try {
             // Проверка дат
@@ -284,8 +288,21 @@ public class BookingController extends BaseErrorController {
 
             // Save the booking
             bookingService.add(booking);
+
+            // Если AJAX-запрос, возвращаем JSON с bookingId
+            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                Map<String, String> result = new HashMap<>();
+                result.put("bookingId", booking.getID());
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
+            }
+
             return "redirect:/bookings";
         } catch (Exception e) {
+            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Fehler beim Speichern der Buchung"));
+            }
             return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
         }
     }
@@ -332,22 +349,28 @@ public class BookingController extends BaseErrorController {
     }
 
     @PostMapping("/create-booking")
-    public String createBooking(
+    public Object createBooking(
             @RequestParam("date") String date,
             @RequestParam("roomId") String roomId,
             @RequestParam("customerName") String customerName,
             @RequestParam("description") String description,
-            // @RequestParam(value = "customerAddress", required = false) String customerAddress, // Удалить
             @RequestParam(value = "customerStreet", required = false) String customerStreet,
             @RequestParam(value = "customerHouseNumber", required = false) String customerHouseNumber,
             @RequestParam(value = "customerPostalCode", required = false) String customerPostalCode,
             @RequestParam(value = "customerCity", required = false) String customerCity,
             @RequestParam(value = "customerCountry", required = false) String customerCountry,
+            jakarta.servlet.http.HttpServletRequest request,
             Model model) {
         try {
             Room room = roomService.getById(roomId);
             if (room == null) {
                 throw new IllegalArgumentException("Room not found for ID: " + roomId);
+            }
+            if (customerName == null || customerName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Kundenname darf nicht leer sein.");
+            }
+            if (date == null || date.trim().isEmpty()) {
+                throw new IllegalArgumentException("Anfangсdatum darf nicht leer sein.");
             }
             Booking booking = new Booking();
             booking.setStartDate(date);
@@ -362,9 +385,23 @@ public class BookingController extends BaseErrorController {
             booking.setCustomerCity(customerCity != null ? customerCity : "");
             booking.setCustomerCountry(customerCountry != null ? customerCountry : "");
             bookingService.add(booking);
+
+            // Если AJAX-запрос, возвращаем JSON с bookingId
+            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                Map<String, String> result = new HashMap<>();
+                result.put("bookingId", booking.getID());
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
+            }
+
+            // Обычный редирект для обычных форм
             return "redirect:/booking/" + booking.getID();
         } catch (Exception e) {
-            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
+            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Fehler beim Speichern der Buchung"));
+            }
+            return error(model, e.getMessage() != null ? e.getMessage() : "Fehler при сохранении бронирования", null);
         }
     }
 
