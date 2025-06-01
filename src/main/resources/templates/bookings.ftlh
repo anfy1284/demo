@@ -20,6 +20,7 @@
             justify-content: center;
             align-items: center;
             margin-bottom: 20px;
+            position: relative;
         }
         .month-navigation button {
             background-color: #007bff; /* Синий фон */
@@ -33,6 +34,7 @@
             align-items: center;
             justify-content: center;
             gap: 5px;
+            height: 40px; /* фиксированная высота для всех кнопок */
         }
         .month-navigation button:hover {
             background-color: #0056b3; /* Темно-синий при наведении */
@@ -40,11 +42,33 @@
         .month-navigation button .material-icons {
             color: white; /* Белые стрелки */
         }
-        .month-navigation span {
-            margin: 0 15px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
+        /* Buchung hinzufügen button */
+        #add-booking-btn {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto 0;
+            display: inline-flex;
+            align-items: center;
+            background: #43a047;
+            color: #fff;
+            padding: 0 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(67,160,71,0.08);
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            height: 40px; /* Совпадает с .month-navigation button */
+            line-height: 40px;
+        }
+        #add-booking-btn .material-icons {
+            font-size: 20px;
+            color: #fff;
+            line-height: 40px;
         }
         .table-container {
             overflow-x: auto;
@@ -177,37 +201,44 @@
         <a href="/bookings-list">Buchungen</a>
         <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
-    <div style="max-width:1200px;margin:24px auto 0 auto;display:flex;justify-content:flex-end;">
-        <a href="/create-booking" id="add-booking-btn" style="
-            display:inline-flex;
-            align-items:center;
-            background:#43a047;
-            color:#fff;
-            padding:10px 18px;
-            border-radius:6px;
-            font-size:16px;
-            font-weight:500;
-            text-decoration:none;
-            box-shadow:0 2px 8px rgba(67,160,71,0.08);
-            gap:8px;
-        ">
-            <span class="material-icons" style="font-size:20px;">add</span>
-            Buchung hinzufügen
-        </a>
-    </div>
     <h1>Buchungen für ${month}/${year}</h1>
-    <div class="month-navigation">
-        <form action="/bookings/${previousYear}/${previousMonth}" method="get">
+    <div class="month-navigation" style="justify-content: center; position: relative; max-width:1200px; margin-left:auto; margin-right:auto;">
+        <form action="/bookings/${previousYear}/${previousMonth}" method="get" style="margin:0;">
             <button type="submit">
                 <span class="material-icons">arrow_back</span> Zurück
             </button>
         </form>
-        <span>${month}/${year}</span>
-        <form action="/bookings/${nextYear}/${nextMonth}" method="get">
+        <span style="margin: 0 24px;">${month}/${year}</span>
+        <form action="/bookings/${nextYear}/${nextMonth}" method="get" style="margin:0;">
             <button type="submit">
                 Weiter <span class="material-icons">arrow_forward</span>
             </button>
         </form>
+        <a href="/create-booking" id="add-booking-btn" style="
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            margin: auto 0;
+            display: inline-flex;
+            align-items: center;
+            background: #43a047;
+            color: #fff;
+            padding: 0 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(67,160,71,0.08);
+            gap: 8px;
+            border: none;
+            cursor: pointer;
+            height: 40px;
+            line-height: 40px;
+        ">
+            <span class="material-icons" style="font-size:20px;color:#fff;line-height:40px;">add</span>
+            <span style="display:inline-block;line-height:40px;">Buchung hinzufügen</span>
+        </a>
     </div>
     <div class="table-container">
         <table>
@@ -246,7 +277,7 @@
                                     </td>
                                 </#if>
                             <#else>
-                                <td>Nicht verfügbar</td>
+                                <td>Nеподходящий номер</td>
                             </#if>
                         </#list>
                     </tr>
