@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -16,6 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Controller
+@RequestMapping("/invoice")
 public class InvoiceController {
 
     private final BookingService bookingService;
@@ -30,7 +32,7 @@ public class InvoiceController {
         this.roomPricingService = roomPricingService;
     }
 
-    @GetMapping("/invoice/new")
+    @GetMapping("/new")
     public String newInvoice(
             @RequestParam(value = "add", required = false) String addId,
             @RequestParam(value = "remove", required = false) String removeId,
@@ -59,5 +61,25 @@ public class InvoiceController {
         String currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
         model.addAttribute("currentDate", currentDate);
         return "invoice";
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<String> addBookingToInvoice(@RequestBody Map<String, String> payload, HttpSession session) {
+        String bookingId = payload.get("bookingId");
+        if (bookingId == null || bookingId.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<String> invoiceBookingIds = (List<String>) session.getAttribute("invoiceBookingIds");
+        if (invoiceBookingIds == null) {
+            invoiceBookingIds = new ArrayList<>();
+            session.setAttribute("invoiceBookingIds", invoiceBookingIds);
+        }
+
+        if (!invoiceBookingIds.contains(bookingId)) {
+            invoiceBookingIds.add(bookingId);
+        }
+
+        return ResponseEntity.ok().build();
     }
 }

@@ -176,6 +176,7 @@
     <div class="navbar">
         <a href="/bookings">Kalender</a>
         <a href="/bookings-list">Buchungen</a>
+        <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
     <div class="bill-container">
         <div style="border-top: 1px solid #000; margin-bottom: 10px;"></div>
@@ -258,28 +259,16 @@
                 <#-- Итоговые суммы налогов по ставкам -->
                 <#if bill?has_content && bill.mwst?has_content>
                     <#list bill.mwst as mwstItem>
+                        <#if mwstItem.label?lower_case?contains("gesamt")>
                         <tr class="summary-row">
                             <td style="text-align: left;">
-                                <#-- Вытаскиваем % из label, если есть -->
-                                <#if mwstItem.label?contains("%")>
-                                    <#assign parts = mwstItem.label?split("%")>
-                                    <#if parts[0]?replace("MwSt. ","")?trim == "0">
-                                        MwSt. -
-                                    <#else>
-                                        MwSt. <span>${parts[0]?replace("MwSt. ","")?trim}</span>%
-                                    </#if>
-                                <#elseif mwstItem.label == "MwSt. 0%">
-                                    MwSt. -
-                                <#elseif mwstItem.label?lower_case?contains("gesamt")>
-                                    ${mwstItem.label}
-                                <#else>
-                                    ${mwstItem.label}
-                                </#if>
+                                ${mwstItem.label}
                             </td>
                             <td colspan="1"></td>
                             <td>${mwstItem.value}</td>
                             <td colspan="2"></td>
                         </tr>
+                        </#if>
                     </#list>
                 </#if>
                 <#-- Итоговые строки (Betrag, Anzahlung, Restbetrag) в самом низу таблицы -->

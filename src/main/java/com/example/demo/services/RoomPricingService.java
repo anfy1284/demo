@@ -172,7 +172,7 @@ public class RoomPricingService {
                 double tax = gross - net;
                 billItems.add(Map.of(
                     "key", "roomOrder_" + order.getId(),
-                    "label", "Zusatzleistung: " + order.getName(),
+                    "label", order.getName(),
                     "value", String.format("%.2f €", gross),
                     "net", String.format("%.2f €", net),
                     "tax", String.format("%.2f €", tax),

@@ -290,12 +290,34 @@
                 display: none !important;
             }
         }
+
+        .add-to-invoice-btn {
+            background-color: #43a047;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .add-to-invoice-btn:hover {
+            background-color: #2e7d32;
+        }
+        .add-to-invoice-btn .material-icons {
+            font-size: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="navbar">
         <a href="/bookings">Kalender</a>
         <a href="/bookings-list">Buchungen</a>
+        <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
     <div class="container">
         <div class="form-container">
@@ -460,6 +482,9 @@
                 <button class="print-bill-btn" onclick="saveAndPrint('${booking.ID}')">
                     <span class="material-icons">print</span> Rechnung drucken
                 </button>
+                <button class="add-to-invoice-btn" onclick="addToInvoice('${booking.ID}')">
+                    <span class="material-icons">playlist_add</span> Zur Rechnung hinzufügen
+                </button>
             </#if>
         </div>
     </div>
@@ -565,8 +590,24 @@
                     alert('Fehler beim Speichern der Buchung vor dem Drucken.');
                 }
             } catch (error) {
-                console.error('Fehler beim SpeSaving und Drucken:', error);
+                console.error('Fehler beim SpeSaving и Drucken:', error);
                 alert('Ein unerwarteter Fehler ist aufетен.');
+            }
+        }
+
+        async function addToInvoice(bookingId) {
+            try {
+                // Отправляем запрос на сервер
+                await fetch(`/invoice/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ bookingId })
+                });
+
+            } catch (error) {
+                console.error('Fehler beim Hinzufügen zur Rechnung:', error);
             }
         }
 

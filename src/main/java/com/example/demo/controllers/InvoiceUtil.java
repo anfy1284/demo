@@ -93,7 +93,42 @@ public class InvoiceUtil {
         }
         Map<String, Object> result = new HashMap<>();
         result.put("main", main);
-        // Можно добавить расчет итогов и налогов аналогично bill.ftlh
+
+        // === Добавляем расчет итоговых сумм налогов по ставкам (mwst) ===
+        Map<Integer, Double> mwstSums = new LinkedHashMap<>();
+        Map<Integer, Double> mwstValues = new LinkedHashMap<>();
+        for (Map<String, Object> item : main) {
+            Object taxRateObj = item.get("taxRate");
+            Object taxObj = item.get("tax");
+            if (taxRateObj != null && taxObj != null) {
+                int taxRate;
+                try { taxRate = Integer.parseInt(taxRateObj.toString()); } catch (Exception e) { continue; }
+                double tax = parseEuro(taxObj);
+                if (taxRate > 0 && tax > 0.0) {
+                    mwstSums.put(taxRate, mwstSums.getOrDefault(taxRate, 0.0) + tax);
+                }
+            }
+        }
+        List<Map<String, Object>> mwstList = new ArrayList<>();
+        double mwstTotal = 0.0;
+        for (Map.Entry<Integer, Double> entry : mwstSums.entrySet()) {
+            // mwstList.add(Map.of(
+            //     "label", "MwSt. " + entry.getKey() + "%",
+            //     "value", String.format("%.2f €", entry.getValue())
+            // ));
+            mwstTotal += entry.getValue();
+        }
+        if (mwstTotal > 0.0) {
+            mwstList.add(Map.of(
+                "label", "MwSt. gesamt",
+                "value", String.format("%.2f €", mwstTotal)
+            ));
+        }
+        if (!mwstList.isEmpty()) {
+            result.put("mwst", mwstList);
+        }
+        // === конец блока mwst ===
+
         return result;
     }
 
