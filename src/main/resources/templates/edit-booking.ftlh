@@ -38,6 +38,26 @@
         .bill-container {
             flex: 1;
             background: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: sticky;
+            top: 76px;
+            align-self: flex-start;
+            z-index: 10;
+            /* min-width и max-width можно оставить как есть */
+        }
+        .bill-actions-sticky {
+            position: sticky;
+            bottom: 0;
+            background: #f9f9f9;
+            padding-bottom: 12px;
+            padding-top: 12px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 20;
         }
         h1, h2 {
             margin: 0 0 20px;
@@ -471,27 +491,107 @@
                     </button>
                 </div>
 
+                <!--
                 <div class="form-footer">
                     <button type="submit">Speichern</button>
                     <a href="/bookings">Abbrechen</a>
                 </div>
+                -->
             </form>
         </div>
         <div class="bill-container">
             <#if method == "edit">
+                <!--
                 <button class="print-bill-btn" onclick="saveAndPrint('${booking.ID}')">
                     <span class="material-icons">print</span> Rechnung drucken
                 </button>
-                <button class="add-to-invoice-btn" onclick="addToInvoice('${booking.ID}')">
-                    <span class="material-icons">playlist_add</span> Zur Rechnung hinzufügen
-                </button>
+                -->
+                <div class="bill-actions-sticky">
+                    <button class="add-to-invoice-btn" onclick="addToInvoice('${booking.ID}')">
+                        <span class="material-icons">playlist_add</span> Zur Rechnung hinzufügen
+                    </button>
+                    <button class="save-btn" type="submit" form="bookingForm">
+                        <span class="material-icons">save</span> Speichern
+                    </button>
+                    <a href="/bookings" class="cancel-btn">
+                        <span class="material-icons">cancel</span> Abbrechen
+                    </a>
+                </div>
             <#elseif method == "create">
-                <button class="add-to-invoice-btn" onclick="saveAndAddToInvoice()">
-                    <span class="material-icons">playlist_add</span> Zur Rechnung hinzufügen
-                </button>
+                <div class="bill-actions-sticky">
+                    <button class="add-to-invoice-btn" onclick="saveAndAddToInvoice()">
+                        <span class="material-icons">playlist_add</span> Zur Rechnung hinzufügen
+                    </button>
+                    <button class="save-btn" type="submit" form="bookingForm">
+                        <span class="material-icons">save</span> Speichern
+                    </button>
+                    <a href="/bookings" class="cancel-btn">
+                        <span class="material-icons">cancel</span> Abbrechen
+                    </a>
+                </div>
             </#if>
         </div>
     </div>
+    <style>
+        .bill-container {
+            /* ...existing styles... */
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .print-bill-btn, .add-to-invoice-btn, .save-btn, .cancel-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            border-radius: 5px;
+            padding: 10px 15px;
+            font-weight: 500;
+            text-decoration: none;
+            justify-content: center;
+            min-width: 180px;
+            box-sizing: border-box;
+        }
+        .print-bill-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+        }
+        .print-bill-btn:hover {
+            background-color: #0056b3;
+        }
+        .add-to-invoice-btn {
+            background-color: #43a047;
+            color: white;
+            border: none;
+        }
+        .add-to-invoice-btn:hover {
+            background-color: #2e7d32;
+        }
+        .save-btn {
+            background-color: #ffc107;
+            color: #333;
+            border: none;
+        }
+        .save-btn:hover {
+            background-color: #ffb300;
+        }
+        .cancel-btn {
+            background-color: white;
+            color: #007bff;
+            border: 1px solid #007bff;
+        }
+        .cancel-btn:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        .print-bill-btn .material-icons,
+        .add-to-invoice-btn .material-icons,
+        .save-btn .material-icons,
+        .cancel-btn .material-icons {
+            font-size: 20px;
+        }
+    </style>
     <script>
         const enableAddressSuggestions = false; // Установите true для включения автоподсказок
 
@@ -805,6 +905,11 @@
 
     //    });    
 
+        // Добавьте id="bookingForm" к форме для корректной работы form="bookingForm"
+        document.addEventListener('DOMContentLoaded', function() {
+            var form = document.querySelector('.form-container form');
+            if (form) form.setAttribute('id', 'bookingForm');
+        });
     </script>
 
 </body>

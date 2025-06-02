@@ -304,7 +304,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('add-booking-btn').addEventListener('click', function(e) {
         if (selectedDate && selectedRoomId) {
             e.preventDefault();
-            window.location.href = `/create-booking?date=${encodeURIComponent(selectedDate)}&roomId=${encodeURIComponent(selectedRoomId)}`;
+            // Используем window.encodeURIComponent из JS, а не Freemarker!
+            window.location.href = '/create-booking?date=' + encodeURIComponent(selectedDate) + '&roomId=' + encodeURIComponent(selectedRoomId);
         }
         // иначе — стандартное поведение (форма без параметров)
     });

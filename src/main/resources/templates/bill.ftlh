@@ -310,7 +310,6 @@
             Sparkasse Allgäu<br>
             IBAN: DE09 7335 0000 0515 0433 47
         </div>
-        <button class="print-btn" onclick="window.print()">Rechnung drucken</button>
     </div>
     <script>
         window.onbeforeprint = function() {

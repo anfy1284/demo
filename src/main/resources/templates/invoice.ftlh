@@ -177,6 +177,7 @@
     </div>
     <div class="invoice-container">
         <div class="invoice-controls" id="invoiceControls">
+            <!--
             <h2>Buchungen für Rechnung</h2>
             <form id="invoiceForm" onsubmit="return false;">
                 <label for="bookingSelect">Buchung hinzufügen:</label>
@@ -188,6 +189,7 @@
                 </select>
                 <button type="button" onclick="addBookingToInvoice()">Hinzufügen</button>
             </form>
+            -->
             <ul id="invoiceBookingsList">
                 <#list invoiceBookings as booking>
                     <li data-id="${booking.ID}">
