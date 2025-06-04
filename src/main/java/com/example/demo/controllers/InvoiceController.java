@@ -92,17 +92,21 @@ public class InvoiceController {
     @ResponseBody
     public Map<String, Object> saveInvoice(@RequestBody Map<String, Object> payload, HttpSession session) {
         try {
-            String date = (String) payload.get("date");
-            String number = (String) payload.get("number");
+            // Дата и номер теперь не приходят с клиента, а формируются здесь
             List<String> bookingIds = (List<String>) payload.get("bookingIds");
-            if (date == null || number == null || bookingIds == null || bookingIds.isEmpty()) {
-                return Map.of("success", false, "error", "Alle Felder müssen ausgefüllt werden.");
+            if (bookingIds == null || bookingIds.isEmpty()) {
+                return Map.of("success", false, "error", "Mindestens eine Buchung muss ausgewählt werden.");
             }
             // Получаем bill для выбранных броней
             List<Booking> bookings = bookingService.getAll().stream()
                 .filter(b -> bookingIds.contains(b.getID()))
                 .collect(Collectors.toList());
             Map<String, Object> bill = InvoiceUtil.calculateInvoiceBill(bookings, roomPricingService, roomService);
+
+            // Формируем дату и номер счета
+            String date = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+            String number = invoiceService.getNextInvoiceNumber();
+
             Invoice invoice = new Invoice(number, date, bookingIds, bill);
             invoiceService.save(invoice);
             return Map.of("success", true);

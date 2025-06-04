@@ -20,10 +20,8 @@ public class Invoice implements Serializable {
     }
 
     public String getNumber() { return number; }
-    public void setNumber(String number) { this.number = number; }
 
     public String getDate() { return date; }
-    public void setDate(String date) { this.date = date; }
 
     public List<String> getBookingIds() { return bookingIds; }
     public void setBookingIds(List<String> bookingIds) { this.bookingIds = bookingIds; }

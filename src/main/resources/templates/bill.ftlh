@@ -208,10 +208,18 @@
                 </#if>
             </div>
             <div class="address-block">
-                ${currentDate}
+                <#-- Используем дату счета, если есть, иначе текущую дату -->
+                <#if invoice?? && invoice.date??>
+                    ${invoice.date}
+                <#else>
+                    ${currentDate!}
+                </#if>
             </div>
         </div>
-        <h2>Rechnung Nr. ${booking.ID}</h2>
+        <h2>
+            <#-- Безопасно выводим номер счета, если invoice или invoice.number отсутствует, выводим "-" -->
+            Rechnung Nr. <#if invoice?? && invoice.number??>${invoice.number}<#else>-</#if>
+        </h2>
         <table class="invoice-table">
             <thead>
                 <tr>

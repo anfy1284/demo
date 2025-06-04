@@ -171,41 +171,14 @@
 </head>
 <body>
     <div class="navbar">
-        <a href="/bookings">Kalender</a>
-        <a href="/bookings-list">Buchungen</a>
+        <a href="/bookings" class="menu-btn">Kalender</a>
+        <a href="/bookings-list" class="menu-btn">Buchungen</a>
         <a href="/invoices" class="menu-btn">Rechnungen</a>
-        <a href="/invoice/new" class="menu-btn <#if !(readonly?? && readonly)>active</#if>">Rechnung erstellen</a>
+        <a href="/invoice/new" class="active">Rechnung erstellen</a>
     </div>
     <div class="invoice-container">
         <div class="invoice-controls" id="invoiceControls">
-            <form id="invoiceMetaForm" style="margin-bottom:18px;">
-                <div style="display:flex;gap:18px;align-items:flex-end;">
-                    <div style="flex:1;">
-                        <label for="invoiceDate" style="font-weight:bold;">Datum</label>
-                        <#if readonly?? && readonly>
-                            <input type="date" id="invoiceDate" name="invoiceDate"
-                                style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #bbb;font-size:15px;background:#f4f4f4;" 
-                                value="${invoice.date!invoiceDate!currentDate}" readonly disabled>
-                        <#else>
-                            <input type="date" id="invoiceDate" name="invoiceDate"
-                                style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #bbb;font-size:15px;"
-                                value="${invoiceDate!currentDate}">
-                        </#if>
-                    </div>
-                    <div style="flex:1;">
-                        <label for="invoiceNumber" style="font-weight:bold;">Rechnungsnummer</label>
-                        <#if readonly?? && readonly>
-                            <input type="text" id="invoiceNumber" name="invoiceNumber"
-                                style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #bbb;font-size:15px;background:#f4f4f4;" 
-                                value="${invoice.number!invoiceNumber!nextInvoiceNumber}" readonly disabled>
-                        <#else>
-                            <input type="text" id="invoiceNumber" name="invoiceNumber"
-                                style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #bbb;font-size:15px;"
-                                value="${invoiceNumber!nextInvoiceNumber}">
-                        </#if>
-                    </div>
-                </div>
-            </form>
+            <!-- Убраны поля для ввода даты и номера счета -->
             <#if !(readonly?? && readonly)>
                 <button class="print-btn" id="saveInvoiceBtn" type="button" style="margin-bottom:10px;">
                     <span class="material-icons" style="vertical-align:middle;">save</span> Rechnung speichern
@@ -250,14 +223,11 @@
             window.location = '/invoice/new?remove=' + encodeURIComponent(id);
         }
         document.getElementById('saveInvoiceBtn').onclick = function() {
-            const date = document.getElementById('invoiceDate').value;
-            const number = document.getElementById('invoiceNumber').value;
             fetch('/invoice/save', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    date: date,
-                    number: number,
+                    // Дата и номер теперь не передаются с клиента
                     bookingIds: Array.from(document.querySelectorAll('#invoiceBookingsList li')).map(li => li.getAttribute('data-id'))
                 })
             }).then(resp => resp.json()).then(data => {
