@@ -157,7 +157,7 @@ public class RoomPricingService {
             double tax = gross - net;
             billItems.add(Map.of(
                 "key", "dogFee",
-                "label", "Hundepreis",
+                "label", "Gebühr für den Hund",
                 "value", String.format("%.2f €", gross),
                 "net", String.format("%.2f €", net),
                 "tax", String.format("%.2f €", tax),

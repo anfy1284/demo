@@ -173,41 +173,64 @@
     <div class="navbar">
         <a href="/bookings">Kalender</a>
         <a href="/bookings-list">Buchungen</a>
+        <a href="/invoices" class="menu-btn">Rechnungen</a>
         <a href="/invoice/new" class="menu-btn active">Rechnung erstellen</a>
     </div>
     <div class="invoice-container">
         <div class="invoice-controls" id="invoiceControls">
-            <!--
-            <h2>Buchungen für Rechnung</h2>
-            <form id="invoiceForm" onsubmit="return false;">
-                <label for="bookingSelect">Buchung hinzufügen:</label>
-                <select id="bookingSelect">
-                    <option value="">Bitte wählen...</option>
-                    <#list allBookings as booking>
-                        <option value="${booking.ID}">${booking.ID} — ${booking.customerName!""} (${booking.startDate} - ${booking.endDate})</option>
-                    </#list>
-                </select>
-                <button type="button" onclick="addBookingToInvoice()">Hinzufügen</button>
+            <form id="invoiceMetaForm" style="margin-bottom:18px;">
+                <div style="display:flex;gap:18px;align-items:flex-end;">
+                    <div style="flex:1;">
+                        <label for="invoiceDate" style="font-weight:bold;">Datum</label>
+                        <#if readonly?? && readonly>
+                            <input type="date" id="invoiceDate" name="invoiceDate"
+                                style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #bbb;font-size:15px;background:#f4f4f4;" 
+                                value="${invoice.date!invoiceDate!currentDate}" readonly disabled>
+                        <#else>
+                            <input type="date" id="invoiceDate" name="invoiceDate"
+                                style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #bbb;font-size:15px;"
+                                value="${invoiceDate!currentDate}">
+                        </#if>
+                    </div>
+                    <div style="flex:1;">
+                        <label for="invoiceNumber" style="font-weight:bold;">Rechnungsnummer</label>
+                        <#if readonly?? && readonly>
+                            <input type="text" id="invoiceNumber" name="invoiceNumber"
+                                style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #bbb;font-size:15px;background:#f4f4f4;" 
+                                value="${invoice.number!invoiceNumber!nextInvoiceNumber}" readonly disabled>
+                        <#else>
+                            <input type="text" id="invoiceNumber" name="invoiceNumber"
+                                style="width:100%;padding:8px 10px;border-radius:5px;border:1px solid #bbb;font-size:15px;"
+                                value="${invoiceNumber!nextInvoiceNumber}">
+                        </#if>
+                    </div>
+                </div>
             </form>
-            -->
+            <#if !(readonly?? && readonly)>
+                <button class="print-btn" id="saveInvoiceBtn" type="button" style="margin-bottom:10px;">
+                    <span class="material-icons" style="vertical-align:middle;">save</span> Rechnung speichern
+                </button>
+            </#if>
             <ul id="invoiceBookingsList">
                 <#list invoiceBookings as booking>
                     <li data-id="${booking.ID}">
                         <span>${booking.ID} — ${booking.customerName!""} (${booking.startDate} - ${booking.endDate})</span>
-                        <button class="remove-btn" title="Entfernen" onclick="removeBookingFromInvoice('${booking.ID}')">
-                            <span class="material-icons">delete</span>
-                        </button>
+                        <#if !(readonly?? && readonly)>
+                            <button class="remove-btn" title="Entfernen" onclick="removeBookingFromInvoice('${booking.ID}')">
+                                <span class="material-icons">delete</span>
+                            </button>
+                        </#if>
                     </li>
                 </#list>
             </ul>
             <button class="print-btn" onclick="window.print()">
-                <span class="material-icons" style="vertical-align:middle;">print</span> Rechnung drucken
+                <span class="material-icons" style="vertical-align:middle;">print</span> Drucken
             </button>
         </div>
         <div class="invoice-main" id="invoiceMain">
-            <#-- Вставляем шаблон счета (bill.ftlh) с данными по всем выбранным броням -->
             <#if invoiceBookings?has_content>
                 <#assign booking=invoiceBookings[0]>
+                <#-- bill уже передан из контроллера, не пересчитываем! -->
                 <#include "bill.ftlh" />
             <#else>
                 <div style="color:#888;font-size:18px;padding:32px 0;">Bitte wählen Sie mindestens eine Buchung aus.</div>
@@ -215,6 +238,7 @@
         </div>
     </div>
     <script>
+        <#if !(readonly?? && readonly)>
         // Добавление и удаление броней из счета
         function addBookingToInvoice() {
             const select = document.getElementById('bookingSelect');
@@ -225,6 +249,27 @@
         function removeBookingFromInvoice(id) {
             window.location = '/invoice/new?remove=' + encodeURIComponent(id);
         }
+        document.getElementById('saveInvoiceBtn').onclick = function() {
+            const date = document.getElementById('invoiceDate').value;
+            const number = document.getElementById('invoiceNumber').value;
+            fetch('/invoice/save', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    date: date,
+                    number: number,
+                    bookingIds: Array.from(document.querySelectorAll('#invoiceBookingsList li')).map(li => li.getAttribute('data-id'))
+                })
+            }).then(resp => resp.json()).then(data => {
+                if (data.success) {
+                    alert('Rechnung wurde gespeichert!');
+                    window.location = '/invoices';
+                } else {
+                    alert(data.error || 'Fehler beim Speichern der Rechnung.');
+                }
+            });
+        };
+        </#if>
     </script>
     <style>
         @media print {
