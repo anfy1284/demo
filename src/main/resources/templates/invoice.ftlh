@@ -174,7 +174,7 @@
         <a href="/bookings">Kalender</a>
         <a href="/bookings-list">Buchungen</a>
         <a href="/invoices" class="menu-btn">Rechnungen</a>
-        <a href="/invoice/new" class="menu-btn active">Rechnung erstellen</a>
+        <a href="/invoice/new" class="menu-btn <#if !(readonly?? && readonly)>active</#if>">Rechnung erstellen</a>
     </div>
     <div class="invoice-container">
         <div class="invoice-controls" id="invoiceControls">

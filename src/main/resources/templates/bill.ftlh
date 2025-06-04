@@ -176,6 +176,7 @@
     <div class="navbar">
         <a href="/bookings">Kalender</a>
         <a href="/bookings-list">Buchungen</a>
+        <a href="/invoices" class="menu-btn">Rechnungen</a>
         <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
     <div class="bill-container">

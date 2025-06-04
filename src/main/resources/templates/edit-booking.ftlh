@@ -337,6 +337,7 @@
     <div class="navbar">
         <a href="/bookings">Kalender</a>
         <a href="/bookings-list">Buchungen</a>
+        <a href="/invoices" class="menu-btn">Rechnungen</a>
         <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
     <div class="container">
@@ -501,13 +502,8 @@
         </div>
         <div class="bill-container">
             <#if method == "edit">
-                <!--
-                <button class="print-bill-btn" onclick="saveAndPrint('${booking.ID}')">
-                    <span class="material-icons">print</span> Rechnung drucken
-                </button>
-                -->
                 <div class="bill-actions-sticky">
-                    <button class="add-to-invoice-btn" onclick="addToInvoice('${booking.ID}')">
+                    <button class="add-to-invoice-btn" onclick="saveAndAddToInvoice()">
                         <span class="material-icons">playlist_add</span> Zur Rechnung hinzufügen
                     </button>
                     <button class="save-btn" type="submit" form="bookingForm">
@@ -699,20 +695,6 @@
             }
         }
 
-        async function addToInvoice(bookingId) {
-            try {
-                await fetch(`/invoice/add`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ bookingId })
-                });
-            } catch (error) {
-                console.error('Fehler beim Hinzufügen zur Rechnung:', error);
-            }
-        }
-
         async function saveAndAddToInvoice() {
             try {
                 const form = document.querySelector('form');
@@ -726,11 +708,15 @@
 
                 const contentType = response.headers.get('content-type') || '';
                 if (response.ok) {
-                    console.log('Server response:', response);
                     if (contentType.includes('application/json')) {
                         const data = await response.json();
                         if (data && data.bookingId) {
-                            await addToInvoice(data.bookingId);
+                            await fetch('/invoice/add', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ bookingId: data.bookingId })
+                            });
+                            alert('Die Buchung wurde gespeichert und zur Rechnung hinzugefügt.');
                         }
                     } else {
                         alert('Fehler: Server hat kein JSON zurückgegeben.');
@@ -745,16 +731,14 @@
                             // ignore
                         }
                     } else {
-                        // Если не JSON, возможно HTML-страница ошибки
                         const text = await response.text();
                         if (text && text.startsWith('<!DOCTYPE')) {
-                            errorMsg = "Fehler beim Speichern der Buchung (HTML-Aнтwort vom Server)";
+                            errorMsg = "Fehler beim Speichern der Buchung (HTML-Aнтвет vom Server)";
                         }
                     }
                     alert(errorMsg);
                 }
             } catch (error) {
-                console.error('Fehler beim Speichern и Hinzufügen zur Rechnung:', error);
                 alert('Fehler beim Speichern и Hinzufügen zur Rechnung.');
             }
         }
