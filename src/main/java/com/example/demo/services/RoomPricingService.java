@@ -99,18 +99,52 @@ public class RoomPricingService {
             ));
         }
         if (includeBreakfast) {
-            double breakfastPrice = roomPricing.getBreakfastPrice() * days;
-            double gross = breakfastPrice;
-            double net = gross / 1.19;
-            double tax = gross - net;
-            billItems.add(Map.of(
-                "key", "breakfastPrice",
-                "label", "Frühstück",
-                "value", String.format("%.2f €", gross),
-                "net", String.format("%.2f €", net),
-                "tax", String.format("%.2f €", tax),
-                "taxRate", 19
-            ));
+            // Новый расчет завтрака по возрастным категориям
+            double breakfastUnder3 = 0.0; // Бесплатно, не добавляем в счет
+            double breakfast3To5 = children3To5Count * roomPricing.getBreakfastPrice3To5() * days;
+            double breakfast6To13 = children6To15Count * roomPricing.getBreakfastPrice6To13() * days;
+            double breakfast14AndOlder = adultGuestCount * roomPricing.getBreakfastPrice14AndOlder() * days;
+
+            if (breakfast3To5 > 0) {
+                double gross = breakfast3To5;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                billItems.add(Map.of(
+                    "key", "breakfastPrice3To5",
+                    "label", "Frühstück (3-5 Jahre)",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            if (breakfast6To13 > 0) {
+                double gross = breakfast6To13;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                billItems.add(Map.of(
+                    "key", "breakfastPrice6To13",
+                    "label", "Frühstück (6-13 Jahre)",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            if (breakfast14AndOlder > 0) {
+                double gross = breakfast14AndOlder;
+                double net = gross / 1.19;
+                double tax = gross - net;
+                billItems.add(Map.of(
+                    "key", "breakfastPrice14AndOlder",
+                    "label", "Frühstück (ab 14 Jahre)",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 19
+                ));
+            }
+            // Дети до 2 лет не добавляются в счет
         }
         if (kurbeitragUnder6 > 0) {
             double gross = kurbeitragUnder6;
@@ -153,7 +187,7 @@ public class RoomPricingService {
         }
         if (dogFee > 0) {
             double gross = dogFee;
-            double net = gross / 1.19;
+            double net = gross / 1.07;
             double tax = gross - net;
             billItems.add(Map.of(
                 "key", "dogFee",
@@ -161,9 +195,28 @@ public class RoomPricingService {
                 "value", String.format("%.2f €", gross),
                 "net", String.format("%.2f €", net),
                 "tax", String.format("%.2f €", tax),
-                "taxRate", 19
+                "taxRate", 7
             ));
         }
+
+        // Endreinigungsgebühr (final cleaning fee) für Kurzbuchung (bis 3 Nächte)
+        if (days <= 3) {
+            double cleaningFee = roomPricing.getFinalCleaningFeeShortStay();
+            if (cleaningFee > 0) {
+                double gross = cleaningFee;
+                double net = gross / 1.07;
+                double tax = gross - net;
+                billItems.add(Map.of(
+                    "key", "finalCleaningFee",
+                    "label", "Endreinigung",
+                    "value", String.format("%.2f €", gross),
+                    "net", String.format("%.2f €", net),
+                    "tax", String.format("%.2f €", tax),
+                    "taxRate", 7
+                ));
+            }
+        }
+
         // ...roomOrders (если есть), финальные итоги...
         if (roomOrders != null && !roomOrders.isEmpty()) {
             for (com.example.demo.classes.RoomOrder order : roomOrders) {

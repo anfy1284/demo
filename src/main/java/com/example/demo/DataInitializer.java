@@ -366,7 +366,11 @@ public class DataInitializer {
             room4Pricing.addPrice(period[0], period[1], 3, 105.00);
         }
 
-        // Устанавливаем стоимость финальной уборки
+        // --- Устанавливаем стоимость финальной уборки для коротких бронирований (до 3 ночей) ---
+        // FeWo Nr. I (room1): 40.00 €
+        // FeWo Nr. II (room2): 60.00 €
+        // FeWo Nr. III (room3): 30.00 €
+        // FeWo Nr. IV (room4): 30.00 €
         room1Pricing.setFinalCleaningFeeShortStay(40.00);
         room2Pricing.setFinalCleaningFeeShortStay(60.00);
         room3Pricing.setFinalCleaningFeeShortStay(30.00);

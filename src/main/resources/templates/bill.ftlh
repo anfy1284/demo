@@ -313,11 +313,17 @@
                 </#if>
             </tbody>
         </table>
+        <#--
         <div style="margin-top: 14px; font-size: 14px;">
             <strong>Wir bitten um Überweisung des Betrages auf das folgende Konto:</strong><br>
             Malgorzata Fischer<br>
             Sparkasse Allgäu<br>
             IBAN: DE09 7335 0000 0515 0433 47
+        </div>
+        -->
+        <div style="margin-top: 14px; font-size: 14px;">
+            Den Betrag haben wir dankend in bar erhalten.<br>
+            Wir danken für Ihren Aufenthalt in unserem Hause!<br>
         </div>
     </div>
     <script>

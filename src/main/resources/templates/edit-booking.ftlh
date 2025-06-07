@@ -16,7 +16,7 @@
             min-height: 100vh;
         }
         .container {
-            width: 90%;
+            width: 70%;
             max-width: 1200px;
             background: #fff;
             border-radius: 10px;
@@ -26,6 +26,10 @@
             flex-direction: row;
             flex-wrap: wrap;
             margin-top: 56px; /* чтобы не перекрывалось меню */
+            /* Добавим отступ справа для фиксированной bill-container */
+            //padding-right: 390px;
+            //padding-left: 100px;
+            margin-right: 315px;
         }
         .form-container, .bill-container {
             padding: 20px;
@@ -40,12 +44,21 @@
             background: #f9f9f9;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            position: sticky;
-            top: 76px;
+            //gap: 12px;
+            position: fixed;
+            //top: 76px;
             align-self: flex-start;
             z-index: 10;
             /* min-width и max-width можно оставить как есть */
+            //position: fixed;
+            //top: 56px;
+            right: 0;
+            width: 370px;
+            max-width: 40vw;
+            min-width: 320px;
+            height: calc(100vh - 56px);
+            overflow-y: auto;
+            //z-index: 101;            
         }
         .bill-actions-sticky {
             position: sticky;
@@ -340,6 +353,7 @@
         <a href="/invoices" class="menu-btn">Rechnungen</a>
         <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
+    <div style="height:56px"></div> <!-- spacer for fixed navbar -->
     <div class="container">
         <div class="form-container">
             <h1>Buchung bearbeiten</h1>

@@ -9,7 +9,15 @@ public class RoomPricing {
     private Map<Period, Map<Integer, Double>> pricing; // Цены в разрезе периода и количества гостей
     private double priceForChildrenUnder3 = 0.0; // Бесплатно для детей до 2 лет включительно
     private double priceForChildren3To5 = 10.0; // Фиксированная цена для детей от 3 до 5 лет
-    private double finalCleaningFeeShortStay; // Стоимость уборки для короткого пребывания (до 3 ночей)
+    // Добавьте поле для стоимости финальной уборки для коротких бронирований
+    private Double finalCleaningFeeShortStay;
+
+    // Removed duplicate getFinalCleaningFeeShortStay() method to resolve compilation error
+
+    public void setFinalCleaningFeeShortStay(Double finalCleaningFeeShortStay) {
+        this.finalCleaningFeeShortStay = finalCleaningFeeShortStay;
+    }
+
     private double kurbeitragUnder6 = 0.0; // Курортный сбор для детей до 5 лет включительно
     private double kurbeitrag6To15 = 1.0; // Курортный сбор для детей от 6 до 15 лет включительно
     private double kurbeitrag16AndOlder = 2.1; // Курортный сбор для лиц 16 лет и старше

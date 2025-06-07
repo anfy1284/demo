@@ -109,7 +109,8 @@ public class InvoiceController {
 
             Invoice invoice = new Invoice(number, date, bookingIds, bill);
             invoiceService.save(invoice);
-            return Map.of("success", true);
+            // Возвращаем номер счета для редиректа на просмотр
+            return Map.of("success", true, "invoiceNumber", number);
         } catch (Exception e) {
             return Map.of("success", false, "error", e.getMessage());
         }
@@ -153,5 +154,11 @@ public class InvoiceController {
     @ResponseBody
     public void deleteInvoice(@PathVariable("number") String number) {
         invoiceService.delete(number);
+    }
+
+    @PostMapping("/invoice/clear")
+    @ResponseBody
+    public void clearInvoiceSession(HttpSession session) {
+        session.removeAttribute("invoiceBookingIds");
     }
 }

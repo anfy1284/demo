@@ -24,6 +24,10 @@
             letter-spacing: 0.5px;
             margin-bottom: 0;
             z-index: 100;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
         }
         .navbar a {
             color: #fff;
@@ -82,7 +86,15 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.08);
             padding: 24px 32px;
             display: flex;
+            flex-direction: row;
             gap: 32px;
+            min-height: 600px;
+        }
+        .invoice-main {
+            margin-top: 0px; /* чтобы не перекрывалось меню */
+            //flex: 2;
+            min-width: 0;
+            margin-right: 315px;
         }
         .invoice-controls {
             flex: 1;
@@ -95,6 +107,15 @@
             display: flex;
             flex-direction: column;
             gap: 18px;
+            position: fixed;
+            top: 56px;
+            right: 0;
+            width: 370px;
+            max-width: 40vw;
+            min-width: 320px;
+            height: calc(100vh - 56px);
+            overflow-y: auto;
+            z-index: 101;
         }
         .invoice-controls h2 {
             margin-top: 0;
@@ -153,18 +174,32 @@
         .invoice-controls .print-btn:hover {
             background: #0056b3;
         }
-        .invoice-main {
-            flex: 2;
-            min-width: 0;
+        .invoice-actions-sticky {
+            position: sticky;
+            bottom: 0;
+            background: #f9f9f9;
+            padding-bottom: 12px;
+            padding-top: 12px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 20;
         }
-        @media (max-width: 900px) {
+        @media (max-width: 1100px) {
+            .invoice-controls {
+                position: static;
+                width: 100%;
+                max-width: 100%;
+                min-width: 0;
+                height: auto;
+                right: unset;
+                top: unset;
+            }
             .invoice-container {
                 flex-direction: column;
                 gap: 0;
                 padding: 8px 2vw;
-            }
-            .invoice-controls {
-                max-width: 100%;
             }
         }
     </style>
@@ -176,13 +211,26 @@
         <a href="/invoices" class="menu-btn">Rechnungen</a>
         <a href="/invoice/new" class="active">Rechnung erstellen</a>
     </div>
+    <div style="height:56px"></div> <!-- spacer for fixed navbar -->
+    <!--
     <div class="invoice-container">
+    -->
+        <div class="invoice-main" id="invoiceMain">
+            <#if invoiceBookings?has_content>
+                <#assign booking=invoiceBookings[0]>
+                <#-- bill уже передан из контроллера, не пересчитываем! -->
+                <#include "bill.ftlh" />
+            <#else>
+                <div style="color:#888;font-size:18px;padding:32px 0;">Bitte wählen Sie mindestens eine Buchung aus.</div>
+            </#if>
+        </div>
         <div class="invoice-controls" id="invoiceControls">
-            <!-- Убраны поля для ввода даты и номера счета -->
             <#if !(readonly?? && readonly)>
-                <button class="print-btn" id="saveInvoiceBtn" type="button" style="margin-bottom:10px;">
-                    <span class="material-icons" style="vertical-align:middle;">save</span> Rechnung speichern
-                </button>
+                <div class="invoice-actions-sticky">
+                    <button class="print-btn" id="saveInvoiceBtn" type="button" style="margin-bottom:10px;">
+                        <span class="material-icons" style="vertical-align:middle;">save</span> Rechnung speichern
+                    </button>
+                </div>
             </#if>
             <ul id="invoiceBookingsList">
                 <#list invoiceBookings as booking>
@@ -200,16 +248,9 @@
                 <span class="material-icons" style="vertical-align:middle;">print</span> Drucken
             </button>
         </div>
-        <div class="invoice-main" id="invoiceMain">
-            <#if invoiceBookings?has_content>
-                <#assign booking=invoiceBookings[0]>
-                <#-- bill уже передан из контроллера, не пересчитываем! -->
-                <#include "bill.ftlh" />
-            <#else>
-                <div style="color:#888;font-size:18px;padding:32px 0;">Bitte wählen Sie mindestens eine Buchung aus.</div>
-            </#if>
-        </div>
+    <!--
     </div>
+    -->
     <script>
         <#if !(readonly?? && readonly)>
         // Добавление и удаление броней из счета
@@ -227,13 +268,19 @@
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    // Дата и номер теперь не передаются с клиента
                     bookingIds: Array.from(document.querySelectorAll('#invoiceBookingsList li')).map(li => li.getAttribute('data-id'))
                 })
             }).then(resp => resp.json()).then(data => {
-                if (data.success) {
-                    alert('Rechnung wurde gespeichert!');
-                    window.location = '/invoices';
+                if (data.success && data.invoiceNumber) {
+                    // Очищаем счет в сессии после сохранения и переходим на просмотр счета
+                    fetch('/invoice/clear', { method: 'POST' }).then(() => {
+                        window.location = '/invoice/view/' + encodeURIComponent(data.invoiceNumber);
+                    });
+                } else if (data.success) {
+                    // fallback: если номер не пришел, просто на список
+                    fetch('/invoice/clear', { method: 'POST' }).then(() => {
+                        window.location = '/invoices';
+                    });
                 } else {
                     alert(data.error || 'Fehler beim Speichern der Rechnung.');
                 }

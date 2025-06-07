@@ -5,7 +5,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background: #f4f4f9; margin: 0; }
-        .navbar { width: 100%; background: #1a237e; color: #fff; display: flex; align-items: center; padding: 0 0 0 24px; height: 56px; box-shadow: 0 2px 8px rgba(26,35,126,0.08); font-size: 18px; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 0; z-index: 100; }
+        .navbar { width: 100%; background: #1a237e; color: #fff; display: flex; align-items: center; padding: 0 0 0 24px; height: 56px; box-shadow: 0 2px 8px rgba(26,35,126,0.08); font-size: 18px; font-weight: 500; letter-spacing: 0.5px; margin-bottom: 0; z-index: 100; position: fixed; top: 0; left: 0; right: 0; }
         .navbar a { color: #fff; text-decoration: none; margin-right: 32px; padding: 0 8px; height: 56px; display: flex; align-items: center; border-bottom: 2px solid transparent; transition: border-bottom 0.2s, color 0.2s; }
         .navbar a.active, .navbar a:hover { color: #ffeb3b; border-bottom: 2px solid #ffeb3b; }
         .navbar a.menu-btn { margin-left: 0; background: none; color: #fff; border-radius: 0; height: 56px; display: flex; align-items: center; font-size: 18px; font-weight: 500; box-shadow: none; padding: 0 8px; border-bottom: 2px solid transparent; transition: border-bottom 0.2s, color 0.2s; }
@@ -33,7 +33,7 @@
             document.querySelectorAll('.delete-btn').forEach(function(btn) {
                 btn.addEventListener('click', function(e) {
                     e.stopPropagation();
-                    if (confirm('Счет будет удалён. Продолжить?')) {
+                    if (confirm('Die Rechnung wird gelöscht. Fortfahren?')) {
                         fetch('/invoice/delete/' + btn.dataset.id, {method:'POST'}).then(() => location.reload());
                     }
                 });
@@ -48,6 +48,7 @@
         <a href="/invoices" class="menu-btn active">Rechnungen</a>
         <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
+    <div style="height:56px"></div> <!-- spacer for fixed navbar -->
     <div class="container">
         <h1>Rechnungen</h1>
         <table>
@@ -94,7 +95,25 @@
                                     <span>${id}</span><#if id_has_next>, </#if>
                                 </#list>
                             </td>
-                            <td>${invoice.total!""}</td>
+                            <td>
+                                <#-- Показываем сумму из bill.main, ищем строку с key == "totalSum" -->
+                                <#if invoice.bill?? && invoice.bill.main??>
+                                    <#assign totalSum = "">
+                                    <#list invoice.bill.main as item>
+                                        <#if item.key?? && item.key == "totalSum">
+                                            <#assign totalSum = item.net!item.value>
+                                            <#break>
+                                        </#if>
+                                    </#list>
+                                    <#if totalSum?has_content>
+                                        ${totalSum}
+                                    <#else>
+                                        -
+                                    </#if>
+                                <#else>
+                                    -
+                                </#if>
+                            </td>
                             <td>
                                 <button class="delete-btn" data-id="${invoice.number}" title="Löschen">
                                     <span class="material-icons">delete</span>

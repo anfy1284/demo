@@ -1,10 +1,3 @@
-<#-- Hauptmenü -->
-<div class="navbar">
-    <a href="/bookings" class="menu-btn">Kalender</a>
-    <a href="/bookings-list" class="active">Buchungen</a>
-    <a href="/invoices" class="menu-btn">Rechnungen</a>
-    <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
-</div>
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -31,6 +24,10 @@
             letter-spacing: 0.5px;
             margin-bottom: 0;
             z-index: 100;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
         }
         .navbar a {
             color: #fff;
@@ -176,6 +173,13 @@
     </script>
 </head>
 <body>
+    <div class="navbar">
+        <a href="/bookings" class="menu-btn">Kalender</a>
+        <a href="/bookings-list" class="active">Buchungen</a>
+        <a href="/invoices" class="menu-btn">Rechnungen</a>
+        <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
+    </div>
+    <div style="height:56px"></div> <!-- spacer for fixed navbar -->
     <div class="container">
         <h1>Buchungen</h1>
         <form class="search-bar" method="get" action="/bookings-list" onsubmit="return false;">

@@ -75,7 +75,7 @@ public class BookingController extends BaseErrorController {
             LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd", java.util.Locale.ENGLISH);
-            DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", java.util.Locale.ENGLISH);
+            DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy (E)", java.util.Locale.GERMAN);
 
             List<String> formattedDatesOfMonth = startDate.datesUntil(endDate.plusDays(1))
                     .map(date -> date.format(formatter))
