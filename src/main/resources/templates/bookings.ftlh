@@ -111,8 +111,15 @@
             font-weight: normal; /* Не жирный */
             text-decoration: none; /* Убираем подчеркивание */
         }
-        tr:nth-child(even) td {
+        tr.calendar-row-even td, tr.calendar-row-even th {
+            background-color: #fff;
+        }
+        tr.calendar-row-odd td, tr.calendar-row-odd th {
             background-color: #f9f9f9;
+        }
+        /* Убираем стандартное чередование строк, чтобы не конфликтовало */
+        tr:nth-child(even) td, tr:nth-child(even) th {
+            background-color: inherit !important;
         }
         tr:hover td {
             background-color: #e9ecef;
@@ -326,33 +333,79 @@
         </thead>
         <tbody>
             <#list datesOfMonth as date>
-                <tr>
-                    <td class="date-column">${displayDatesOfMonth[date_index]}</td>
+                <#-- FreeMarker: date_index is a string, so cast to int for math -->
+                <#assign rowClass = (date_index?number % 2 == 0)?then('calendar-row-even', 'calendar-row-odd')>
+                <tr class="${rowClass}">
+                    <td class="date-column" rowspan="2">${displayDatesOfMonth[date_index]}</td>
                     <#list rooms as room>
-                        <#if room.ID??>
-                            <#if bookingsMap[date][room.ID]??>
-                                <#assign booking = bookingsMap[date][room.ID]>
-                                <#if booking.startDate == date>
-                                    <td rowspan="${booking.duration}">
-                                        <a href="/booking/${booking.ID}">
-                                            <div class="booking-id">${booking.ID}</div>
-                                            <div class="booking-customer">${booking.customerName! 'Unbekannt'}</div>
-                                            <div class="booking-description">${booking.description! ''}</div>
-                                        </a>
-                                    </td>
-                                <#else>
-                                    <!-- Skip rendering -->
-                                </#if>
-                            <#else>
-                                <td>
-                                    <a href="/create-booking?date=${date}&roomId=${room.ID}">
-                                        <span>${displayDatesOfMonth[date_index]}</span>
+                        <#assign cell = calendarCells[date][room.ID]>
+                        <#if cell.cellType == "end_start">
+                            <td style="padding:0;">
+                                <div style="height:50%;border-bottom:1px dashed #bbb;display:flex;align-items:center;justify-content:center;">
+                                    <a href="/booking/${cell.bookingEnd.ID}">
+                                        <div class="booking-id">${cell.bookingEnd.ID}</div>
+                                        <div class="booking-customer">${cell.bookingEnd.customerName! 'Unbekannt'}</div>
+                                        <div class="booking-description">${cell.bookingEnd.description! ''}</div>
                                     </a>
-                                </td>
-                            </#if>
+                                </div>
+                                <div style="height:50%;border-top:1px dashed #bbb;display:flex;align-items:center;justify-content:center;">
+                                    <a href="/booking/${cell.bookingStart.ID}">
+                                        <div class="booking-id">${cell.bookingStart.ID}</div>
+                                        <div class="booking-customer">${cell.bookingStart.customerName! 'Unbekannt'}</div>
+                                        <div class="booking-description">${cell.bookingStart.description! ''}</div>
+                                    </a>
+                                </div>
+                            </td>
+                        <#elseif cell.cellType == "end_empty">
+                            <td style="padding:0;">
+                                <div style="height:50%;border-bottom:1px dashed #bbb;display:flex;align-items:center;justify-content:center;">
+                                    <a href="/booking/${cell.bookingEnd.ID}">
+                                        <div class="booking-id">${cell.bookingEnd.ID}</div>
+                                        <div class="booking-customer">${cell.bookingEnd.customerName! 'Unbekannt'}</div>
+                                        <div class="booking-description">${cell.bookingEnd.description! ''}</div>
+                                    </a>
+                                </div>
+                                <div style="height:50%;border-top:1px dashed #eee;display:flex;align-items:center;justify-content:center;">
+                                    <a href="/create-booking?date=${date}&roomId=${room.ID}">
+                                        <span>${date?date("yyyy-MM-dd")?string("dd.MM.yyyy")}</span>
+                                    </a>
+                                </div>
+                            </td>
+                        <#elseif cell.cellType == "empty_start">
+                            <td style="padding:0;">
+                                <div style="height:50%;border-bottom:1px dashed #eee;display:flex;align-items:center;justify-content:center;">
+                                    <a href="/create-booking?date=${date}&roomId=${room.ID}">
+                                        <span>${date?date("yyyy-MM-dd")?string("dd.MM.yyyy")}</span>
+                                    </a>
+                                </div>
+                                <div style="height:50%;border-top:1px dashed #bbb;display:flex;align-items:center;justify-content:center;">
+                                    <a href="/booking/${cell.bookingStart.ID}">
+                                        <div class="booking-id">${cell.bookingStart.ID}</div>
+                                        <div class="booking-customer">${cell.bookingStart.customerName! 'Unbekannt'}</div>
+                                        <div class="booking-description">${cell.bookingStart.description! ''}</div>
+                                    </a>
+                                </div>
+                            </td>
+                        <#elseif cell.cellType != "empty">
+                            <td rowspan="2" style="border-bottom:1px dashed #bbb; border-top:1px dashed #bbb;">
+                                <a href="/booking/${cell.booking.ID}">
+                                    <div class="booking-id">${cell.booking.ID}</div>
+                                    <div class="booking-customer">${cell.booking.customerName! 'Unbekannt'}</div>
+                                    <div class="booking-description">${cell.booking.description! ''}</div>
+                                </a>
+                            </td>
                         <#else>
-                            <td>Nеподходящий номер</td>
+                            <td rowspan="2" style="border-bottom:1px dashed #eee; border-top:1px dashed #eee;">
+                                <a href="/create-booking?date=${date}&roomId=${room.ID}">
+                                    <span>${date?date("yyyy-MM-dd")?string("dd.MM.yyyy")}</span>
+                                </a>
+                            </td>
                         </#if>
+                    </#list>
+                </tr>
+                <tr class="${rowClass}">
+                    <#list rooms as room>
+                        <#-- В нижней строке ничего не рендерим для объединённых ячеек -->
                     </#list>
                 </tr>
             </#list>

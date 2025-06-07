@@ -87,10 +87,21 @@ public class BookingController extends BaseErrorController {
 
             // Подготовка данных для отображения бронирований
             Map<String, Map<String, Booking>> bookingsMap = new HashMap<>();
+            Map<String, Map<String, Booking>> bookingsStartingMap = new HashMap<>();
+            Map<String, Map<String, Booking>> bookingsEndingMap = new HashMap<>();
+            // --- Новый map для типа ячейки и самой брони ---
+            Map<String, Map<String, Map<String, Object>>> calendarCells = new HashMap<>();
+
             for (String date : formattedDatesOfMonth) {
                 bookingsMap.put(date, new HashMap<>());
+                bookingsStartingMap.put(date, new HashMap<>());
+                bookingsEndingMap.put(date, new HashMap<>());
+                calendarCells.put(date, new HashMap<>());
                 for (Room room : rooms) {
                     bookingsMap.get(date).put(room.getID(), null);
+                    bookingsStartingMap.get(date).put(room.getID(), null);
+                    bookingsEndingMap.get(date).put(room.getID(), null);
+                    calendarCells.get(date).put(room.getID(), null);
                 }
             }
 
@@ -105,6 +116,81 @@ public class BookingController extends BaseErrorController {
                 }
                 // Добавляем информацию о продолжительности бронирования
                 booking.setDuration((int) (bookingEnd.toEpochDay() - bookingStart.toEpochDay() + 1));
+                // --- NEW: fill starting/ending maps ---
+                String startKey = bookingStart.format(formatter);
+                String endKey = bookingEnd.format(formatter);
+                if (bookingsStartingMap.containsKey(startKey) && booking.getRoom() != null) {
+                    bookingsStartingMap.get(startKey).put(booking.getRoom().getID(), booking);
+                }
+                if (bookingsEndingMap.containsKey(endKey) && booking.getRoom() != null) {
+                    bookingsEndingMap.get(endKey).put(booking.getRoom().getID(), booking);
+                }
+            }
+
+            // --- Формируем calendarCells ---
+            for (String date : formattedDatesOfMonth) {
+                for (Room room : rooms) {
+                    Booking booking = bookingsMap.get(date).get(room.getID());
+                    Booking bookingStart = bookingsStartingMap.get(date).get(room.getID());
+                    Booking bookingEnd = bookingsEndingMap.get(date).get(room.getID());
+                    Map<String, Object> cell = new HashMap<>();
+                    // Если нет брони вообще
+                    if (booking == null && bookingStart == null && bookingEnd == null) {
+                        cell.put("cellType", "empty");
+                        cell.put("booking", null);
+                    } else if (bookingEnd != null && bookingStart != null && !bookingEnd.getID().equals(bookingStart.getID())) {
+                        // В одной дате заканчивается одна бронь и начинается другая
+                        cell.put("cellType", "end_start");
+                        cell.put("bookingEnd", bookingEnd);
+                        cell.put("bookingStart", bookingStart);
+                    } else if (bookingEnd != null && (bookingStart == null || bookingEnd.getID().equals(bookingStart != null ? bookingStart.getID() : ""))) {
+                        // В этой дате только заканчивается бронь, а новая не начинается
+                        cell.put("cellType", "end_empty");
+                        cell.put("bookingEnd", bookingEnd);
+                    } else if (bookingStart != null && (bookingEnd == null || bookingStart.getID().equals(bookingEnd != null ? bookingEnd.getID() : ""))) {
+                        // В этой дате только начинается бронь, а никакая не заканчивается
+                        cell.put("cellType", "empty_start");
+                        cell.put("bookingStart", bookingStart);
+                    } else if (booking != null) {
+                        LocalDate d = LocalDate.parse(date);
+                        LocalDate bStart = LocalDate.parse(booking.getStartDate());
+                        LocalDate bEnd = LocalDate.parse(booking.getEndDate());
+                        boolean isStart = d.isEqual(bStart);
+                        boolean isEnd = d.isEqual(bEnd);
+                        boolean isFull = d.isAfter(bStart) && d.isBefore(bEnd);
+                        boolean isOneDay = bStart.isEqual(bEnd) && bStart.isEqual(d);
+
+                        if (isFull) {
+                            cell.put("cellType", "full");
+                            cell.put("booking", booking);
+                        } else if (isOneDay) {
+                            cell.put("cellType", "full");
+                            cell.put("booking", booking);
+                        } else if (isStart && isEnd) {
+                            cell.put("cellType", "full");
+                            cell.put("booking", booking);
+                        } else if (isStart) {
+                            cell.put("cellType", "full");
+                            cell.put("booking", booking);
+                        } else if (isEnd) {
+                            cell.put("cellType", "full");
+                            cell.put("booking", booking);
+                        } else {
+                            cell.put("cellType", "full");
+                            cell.put("booking", booking);
+                        }
+                    } else if (bookingStart != null) {
+                        cell.put("cellType", "full");
+                        cell.put("booking", bookingStart);
+                    } else if (bookingEnd != null) {
+                        cell.put("cellType", "full");
+                        cell.put("booking", bookingEnd);
+                    } else {
+                        cell.put("cellType", "empty");
+                        cell.put("booking", null);
+                    }
+                    calendarCells.get(date).put(room.getID(), cell);
+                }
             }
 
             model.addAttribute("rooms", rooms);
@@ -112,7 +198,7 @@ public class BookingController extends BaseErrorController {
             model.addAttribute("year", year);
             model.addAttribute("datesOfMonth", formattedDatesOfMonth);
             model.addAttribute("displayDatesOfMonth", displayDatesOfMonth);
-            model.addAttribute("bookingsMap", bookingsMap);
+            model.addAttribute("calendarCells", calendarCells);
 
             LocalDate previousMonth = startDate.minusMonths(1);
             LocalDate nextMonth = startDate.plusMonths(1);
