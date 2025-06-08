@@ -85,25 +85,41 @@ public class BookingController extends BaseErrorController {
                     .map(date -> date.format(displayFormatter))
                     .collect(Collectors.toList());
 
-            // Подготовка данных для отображения бронирований
-            Map<String, Map<String, Booking>> bookingsMap = new HashMap<>();
+            // Новый bookingsMap: date -> roomId -> {startBooking, endBooking, ongoingBooking}
+            Map<String, Map<String, Map<String, Booking>>> bookingsMap = new HashMap<>();
             for (String date : formattedDatesOfMonth) {
                 bookingsMap.put(date, new HashMap<>());
                 for (Room room : rooms) {
-                    bookingsMap.get(date).put(room.getID(), null);
+                    Map<String, Booking> entry = new HashMap<>();
+                    entry.put("startBooking", null);
+                    entry.put("endBooking", null);
+                    entry.put("ongoingBooking", null);
+                    bookingsMap.get(date).put(room.getID(), entry);
                 }
             }
 
             for (Booking booking : bookingService.getAll()) {
                 LocalDate bookingStart = LocalDate.parse(booking.getStartDate());
                 LocalDate bookingEnd = LocalDate.parse(booking.getEndDate());
-                for (LocalDate date = bookingStart; !date.isAfter(bookingEnd); date = date.plusDays(1)) {
-                    String dateKey = date.format(formatter);
-                    if (bookingsMap.containsKey(dateKey) && booking.getRoom() != null) {
-                        bookingsMap.get(dateKey).put(booking.getRoom().getID(), booking);
+                String startKey = bookingStart.format(formatter);
+                String endKey = bookingEnd.format(formatter);
+                if (bookingsMap.containsKey(startKey) && booking.getRoom() != null) {
+                    bookingsMap.get(startKey).get(booking.getRoom().getID()).put("startBooking", booking);
+                }
+                if (bookingsMap.containsKey(endKey) && booking.getRoom() != null) {
+                    bookingsMap.get(endKey).get(booking.getRoom().getID()).put("endBooking", booking);
+                }
+                // ongoingBooking: для всех дат между start и end, кроме самой start и end
+                if (booking.getRoom() != null) {
+                    LocalDate d = bookingStart.plusDays(1);
+                    while (d.isBefore(bookingEnd)) {
+                        String key = d.format(formatter);
+                        if (bookingsMap.containsKey(key)) {
+                            bookingsMap.get(key).get(booking.getRoom().getID()).put("ongoingBooking", booking);
+                        }
+                        d = d.plusDays(1);
                     }
                 }
-                // Добавляем информацию о продолжительности бронирования
                 booking.setDuration((int) (bookingEnd.toEpochDay() - bookingStart.toEpochDay() + 1));
             }
 

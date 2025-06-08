@@ -329,53 +329,48 @@
         <tbody>
             <#list datesOfMonth as date>
                 <tr>
-                    <td rowspan="1" class="date-column">${displayDatesOfMonth[date_index]}</td>
+                    <td class="date-column" rowspan="2">${displayDatesOfMonth[date_index]}</td>
                     <#list rooms as room>
-                        <#assign room = rooms[0]>
-                        <#if room.ID??>
-                            <#if bookingsMap[date][room.ID]??>
-                                <#assign booking = bookingsMap[date][room.ID]>
-                                <#if booking.startDate == date>
-                                    <td></td>
-                                <#else>
-                                    <!-- Skip rendering -->
-                                </#if>
-                            <#else>
-                                <td rowspan="2">
-                                    <a href="/create-booking?date=${date}&roomId=${room.ID}">
-                                        <span>${displayDatesOfMonth[date_index]}</span>
-                                    </a>
-                                </td>
-                            </#if>
+                        <#assign cell = bookingsMap[date][room.ID]>
+
+                        <#if cell["startBooking"]?? && cell["startBooking"]?has_content && !(cell["endBooking"]?? && cell["endBooking"]?has_content)>
+                            <td rowspan="${cell["startBooking"].duration * 2 - 1}">
+                                <a href="/booking/${cell["startBooking"].ID}">
+                                    <div class="booking-id">${cell["startBooking"].ID}</div>
+                                    <div class="booking-customer">${cell["startBooking"].customerName! 'Unbekannt'}</div>
+                                    <div class="booking-description">${cell["startBooking"].description! ''}</div>
+                                </a>
+                            </td>
+                        <#elseif !(cell["ongoingBooking"]?? && cell["ongoingBooking"]?has_content) && !(cell["endBooking"]?? && cell["endBooking"]?has_content)>
+                            <td>
+                                <a href="/create-booking?date=${date}&roomId=${room.ID}">
+                                    <span>( +neue )</span>
+                                </a>
+                            </td>
                         </#if>
+
                     </#list>
                 </tr>
                 <tr>
-                    <td rowspan="1" class="date-column">${displayDatesOfMonth[date_index]}</td>
                     <#list rooms as room>
-                        <#assign room = rooms[0]>
-                        <#if room.ID??>
-                            <#if bookingsMap[date][room.ID]??>
-                                <#assign booking = bookingsMap[date][room.ID]>
-                                <#if booking.startDate == date>
-                                    <td rowspan="${booking.duration * 2 - 2}">
-                                        <a href="/booking/${booking.ID}">
-                                            <div class="booking-id">${booking.ID}</div>
-                                            <div class="booking-customer">${booking.customerName! 'Unbekannt'}</div>
-                                            <div class="booking-description">${booking.description! ''}</div>
-                                        </a>
-                                    </td>
-                                <#elseif booking.endDate == date>
-                                    <td>
-                                        <a href="/create-booking?date=${date}&roomId=${room.ID}">
-                                            <span>${displayDatesOfMonth[date_index]}!!!</span>
-                                        </a>
-                                    </td>
-                                <#else>
-                                    <!-- Skip rendering -->
-                                </#if>
-                            </#if>
+                        <#assign cell = bookingsMap[date][room.ID]>
+                        
+                        <#if cell["startBooking"]?? && cell["startBooking"]?has_content && cell["endBooking"]?? && cell["endBooking"]?has_content>
+                            <td rowspan="${cell["startBooking"].duration * 2 - 2}">
+                                <a href="/booking/${cell["startBooking"].ID}">
+                                    <div class="booking-id">${cell["startBooking"].ID}</div>
+                                    <div class="booking-customer">${cell["startBooking"].customerName! 'Unbekannt'}</div>
+                                    <div class="booking-description">${cell["startBooking"].description! ''}</div>
+                                </a>
+                            </td>
+                        <#elseif !(cell["ongoingBooking"]?? && cell["ongoingBooking"]?has_content) && !(cell["startBooking"]?? && cell["startBooking"]?has_content)>
+                            <td>
+                                <a href="/create-booking?date=${date}&roomId=${room.ID}">
+                                    <span>( +neue )</span>
+                                </a>
+                            </td>
                         </#if>
+                    
                     </#list>
                 </tr>
             </#list>
