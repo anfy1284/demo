@@ -305,11 +305,13 @@
             <table class="fixed-header-table">
                 <thead>
                     <tr>
+                        <th style="width:1px; min-width:1px; max-width:1px; background:transparent; border:none;"></th>
                         <th class="date-column">Datum</th>
                         <#list rooms as room>
                         <#assign room = rooms[0]>
                             <th>${room.name}</th>
                         </#list>
+                        <th style="width:1px; min-width:1px; max-width:1px; background:transparent; border:none;"></th>
                     </tr>
                 </thead>
             </table>
@@ -329,6 +331,7 @@
         <tbody>
             <#list datesOfMonth as date>
                 <tr>
+                    <td style="width:1px; min-width:1px; max-width:1px; background:transparent; border:none; font-size:8px;">&#160;</td>
                     <td class="date-column" rowspan="2">${displayDatesOfMonth[date_index]}</td>
                     <#list rooms as room>
                         <#assign cell = bookingsMap[date][room.ID]>
@@ -342,16 +345,19 @@
                                 </a>
                             </td>
                         <#elseif !(cell["ongoingBooking"]?? && cell["ongoingBooking"]?has_content) && !(cell["endBooking"]?? && cell["endBooking"]?has_content)>
-                            <td>
+                            <td rowspan="2">
                                 <a href="/create-booking?date=${date}&roomId=${room.ID}">
-                                    <span>( +neue )</span>
+                                    <span>(+neue)</span>
                                 </a>
                             </td>
                         </#if>
 
                     </#list>
+                    <td style="width:1px; min-width:1px; max-width:1px; background:transparent; border:none; font-size:8px;">&#160;</td>
                 </tr>
                 <tr>
+                    <td style="width:1px; min-width:1px; max-width:1px; background:transparent; border:none; font-size:8px;">&#160;</td>
+                    
                     <#list rooms as room>
                         <#assign cell = bookingsMap[date][room.ID]>
                         
@@ -363,15 +369,16 @@
                                     <div class="booking-description">${cell["startBooking"].description! ''}</div>
                                 </a>
                             </td>
-                        <#elseif !(cell["ongoingBooking"]?? && cell["ongoingBooking"]?has_content) && !(cell["startBooking"]?? && cell["startBooking"]?has_content)>
+                        <#elseif cell["endBooking"]?? && cell["endBooking"]?has_content && !(cell["ongoingBooking"]?? && cell["ongoingBooking"]?has_content) && !(cell["startBooking"]?? && cell["startBooking"]?has_content)>
                             <td>
                                 <a href="/create-booking?date=${date}&roomId=${room.ID}">
-                                    <span>( +neue )</span>
+                                    <span>(+neue)</span>
                                 </a>
                             </td>
                         </#if>
                     
                     </#list>
+                    <td style="width:1px; min-width:1px; max-width:1px; background:transparent; border:none; font-size:8px;">&#160;</td>
                 </tr>
             </#list>
         </tbody>
