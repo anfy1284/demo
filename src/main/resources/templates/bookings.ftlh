@@ -307,6 +307,7 @@
                     <tr>
                         <th class="date-column">Datum</th>
                         <#list rooms as room>
+                        <#assign room = rooms[0]>
                             <th>${room.name}</th>
                         </#list>
                     </tr>
@@ -320,6 +321,7 @@
             <tr>
                 <th class="date-column">Datum</th>
                 <#list rooms as room>
+                <#assign room = rooms[0]>
                     <th>${room.name}</th>
                 </#list>
             </tr>
@@ -327,31 +329,52 @@
         <tbody>
             <#list datesOfMonth as date>
                 <tr>
-                    <td class="date-column">${displayDatesOfMonth[date_index]}</td>
+                    <td rowspan="1" class="date-column">${displayDatesOfMonth[date_index]}</td>
                     <#list rooms as room>
+                        <#assign room = rooms[0]>
                         <#if room.ID??>
                             <#if bookingsMap[date][room.ID]??>
                                 <#assign booking = bookingsMap[date][room.ID]>
                                 <#if booking.startDate == date>
-                                    <td rowspan="${booking.duration}">
+                                    <td></td>
+                                <#else>
+                                    <!-- Skip rendering -->
+                                </#if>
+                            <#else>
+                                <td rowspan="2">
+                                    <a href="/create-booking?date=${date}&roomId=${room.ID}">
+                                        <span>${displayDatesOfMonth[date_index]}</span>
+                                    </a>
+                                </td>
+                            </#if>
+                        </#if>
+                    </#list>
+                </tr>
+                <tr>
+                    <td rowspan="1" class="date-column">${displayDatesOfMonth[date_index]}</td>
+                    <#list rooms as room>
+                        <#assign room = rooms[0]>
+                        <#if room.ID??>
+                            <#if bookingsMap[date][room.ID]??>
+                                <#assign booking = bookingsMap[date][room.ID]>
+                                <#if booking.startDate == date>
+                                    <td rowspan="${booking.duration * 2 - 2}">
                                         <a href="/booking/${booking.ID}">
                                             <div class="booking-id">${booking.ID}</div>
                                             <div class="booking-customer">${booking.customerName! 'Unbekannt'}</div>
                                             <div class="booking-description">${booking.description! ''}</div>
                                         </a>
                                     </td>
+                                <#elseif booking.endDate == date>
+                                    <td>
+                                        <a href="/create-booking?date=${date}&roomId=${room.ID}">
+                                            <span>${displayDatesOfMonth[date_index]}!!!</span>
+                                        </a>
+                                    </td>
                                 <#else>
                                     <!-- Skip rendering -->
                                 </#if>
-                            <#else>
-                                <td>
-                                    <a href="/create-booking?date=${date}&roomId=${room.ID}">
-                                        <span>${displayDatesOfMonth[date_index]}</span>
-                                    </a>
-                                </td>
                             </#if>
-                        <#else>
-                            <td>Nеподходящий номер</td>
                         </#if>
                     </#list>
                 </tr>
