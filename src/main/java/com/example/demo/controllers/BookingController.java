@@ -107,12 +107,72 @@ public class BookingController extends BaseErrorController {
                 booking.setDuration((int) (bookingEnd.toEpochDay() - bookingStart.toEpochDay() + 1));
             }
 
+            // --- Новый блок: вычисление типа ячейки для каждой даты и комнаты ---
+            Map<String, Map<String, Integer>> cellTypesMap = new HashMap<>();
+            for (int dateIdx = 0; dateIdx < formattedDatesOfMonth.size(); dateIdx++) {
+                String date = formattedDatesOfMonth.get(dateIdx);
+                cellTypesMap.put(date, new HashMap<>());
+                for (Room room : rooms) {
+                    String roomId = room.getID();
+                    Booking booking = bookingsMap.get(date).get(roomId);
+
+                    // 1. Нет брони в этот день
+                    if (booking == null) {
+                        cellTypesMap.get(date).put(roomId, 1);
+                        continue;
+                    }
+
+                    LocalDate d = LocalDate.parse(date);
+                    LocalDate bookingStart = LocalDate.parse(booking.getStartDate());
+                    LocalDate bookingEnd = LocalDate.parse(booking.getEndDate());
+
+                    // 2. Бронь начинается раньше этого дня и заканчивается позже (весь день занят одной бронью)
+                    if (d.isAfter(bookingStart) && d.isBefore(bookingEnd)) {
+                        cellTypesMap.get(date).put(roomId, 2);
+                        continue;
+                    }
+
+                    // 3. В этот день заканчивается одна бронь и начинается другая
+                    boolean endsToday = d.isEqual(bookingEnd);
+                    boolean startsToday = d.isEqual(bookingStart);
+
+                    // Проверяем есть ли другая бронь, которая начинается сегодня
+                    boolean anotherStartsToday = false;
+                    boolean anotherEndsToday = false;
+                    for (Booking b : bookingService.getAll()) {
+                        if (b == booking || b.getRoom() == null || !b.getRoom().getID().equals(roomId)) continue;
+                        LocalDate bStart = LocalDate.parse(b.getStartDate());
+                        LocalDate bEnd = LocalDate.parse(b.getEndDate());
+                        if (bStart.isEqual(d)) anotherStartsToday = true;
+                        if (bEnd.isEqual(d)) anotherEndsToday = true;
+                    }
+                    if (endsToday && anotherStartsToday) {
+                        cellTypesMap.get(date).put(roomId, 3);
+                        continue;
+                    }
+                    // 4. В этот день заканчивается одна бронь, но не начинается другая
+                    if (endsToday && !anotherStartsToday) {
+                        cellTypesMap.get(date).put(roomId, 4);
+                        continue;
+                    }
+                    // 5. В этот день начинается бронь, но никакая другая не заканчивается
+                    if (startsToday && !anotherEndsToday) {
+                        cellTypesMap.get(date).put(roomId, 5);
+                        continue;
+                    }
+                    // Если ничего не подошло, по умолчанию тип 2 (весь день занят одной бронью)
+                    cellTypesMap.get(date).put(roomId, 2);
+                }
+            }
+            // --- Конец нового блока ---
+
             model.addAttribute("rooms", rooms);
             model.addAttribute("month", month);
             model.addAttribute("year", year);
             model.addAttribute("datesOfMonth", formattedDatesOfMonth);
             model.addAttribute("displayDatesOfMonth", displayDatesOfMonth);
             model.addAttribute("bookingsMap", bookingsMap);
+            model.addAttribute("cellTypesMap", cellTypesMap); // <-- добавлено
 
             LocalDate previousMonth = startDate.minusMonths(1);
             LocalDate nextMonth = startDate.plusMonths(1);
