@@ -405,11 +405,18 @@
                     </div>
                 </fieldset>
 
-                <label for="startDate">Anfangsdatum:</label>
-                <input type="date" id="startDate" name="startDate" value="${booking.startDate}" required>
-
-                <label for="endDate">Enddatum:</label>
-                <input type="date" id="endDate" name="endDate" value="${booking.endDate}" required>
+                <!-- Даты начала и окончания на одной строке -->
+                <div style="display: flex; gap: 16px; align-items: flex-end; margin-bottom: 15px;">
+                    <div style="flex:1;">
+                        <label for="startDate">Anfangsdatum:</label>
+                        <input type="date" id="startDate" name="startDate" value="${booking.startDate}" required>
+                    </div>
+                    <div style="flex:1;">
+                        <label for="endDate">Enddatum:</label>
+                        <input type="date" id="endDate" name="endDate" value="${booking.endDate}" required>
+                    </div>
+                </div>
+                <!-- конец блока дат -->
 
                 <label for="prepayment">Anzahlung:</label>
                 <input type="text" id="prepayment" name="prepayment" 
