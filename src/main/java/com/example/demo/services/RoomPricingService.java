@@ -65,9 +65,26 @@ public class RoomPricingService {
         double kurbeitrag6To15 = children6To15Count * roomPricing.getKurbeitrag6To15() * days;
         double kurbeitrag16AndOlder = adultGuestCount * roomPricing.getKurbeitrag16AndOlder() * days;
 
+        // Endreinigungsgebühr (final cleaning fee) für Kurzbuchung (bis 3 Nächte)
+        double cleaningFee = 0.0;
+        boolean cleaningFeeFromOrder = false;
+        if (roomOrders != null && !roomOrders.isEmpty()) {
+            for (com.example.demo.classes.RoomOrder order : roomOrders) {
+                if ("Endreinigung".equalsIgnoreCase(order.getName())) {
+                    cleaningFee += order.getPrice();
+                    cleaningFeeFromOrder = true;
+                }
+            }
+        }
+        if (!cleaningFeeFromOrder && days <= 3) {
+            cleaningFee += roomPricing.getFinalCleaningFeeShortStay();
+        }
+        // accommodationPrice включает Endreinigung если есть
+        double accommodationPriceWithCleaning = accommodationPrice + cleaningFee;
+
         // Основные услуги (ночевки)
-        if (accommodationPrice > 0) {
-            double gross = accommodationPrice;
+        if (accommodationPriceWithCleaning > 0) {
+            double gross = accommodationPriceWithCleaning;
             double net = gross / 1.07;
             double tax = gross - net;
             String label = days > 1
@@ -199,27 +216,28 @@ public class RoomPricingService {
             ));
         }
 
-        // Endreinigungsgebühr (final cleaning fee) für Kurzbuchung (bis 3 Nächte)
-        if (days <= 3) {
-            double cleaningFee = roomPricing.getFinalCleaningFeeShortStay();
-            if (cleaningFee > 0) {
-                double gross = cleaningFee;
-                double net = gross / 1.07;
-                double tax = gross - net;
-                billItems.add(Map.of(
-                    "key", "finalCleaningFee",
-                    "label", "Endreinigung",
-                    "value", String.format("%.2f €", gross),
-                    "net", String.format("%.2f €", net),
-                    "tax", String.format("%.2f €", tax),
-                    "taxRate", 7
-                ));
-            }
-        }
+        // Удаляем добавление отдельной строки Endreinigung:
+        // if (days <= 3) {
+        //     double cleaningFee = roomPricing.getFinalCleaningFeeShortStay();
+        //     if (cleaningFee > 0) {
+        //         double gross = cleaningFee;
+        //         double net = gross / 1.07;
+        //         double tax = gross - net;
+        //         billItems.add(Map.of(
+        //             "key", "finalCleaningFee",
+        //             "label", "Endreinigung",
+        //             "value", String.format("%.2f €", gross),
+        //             "net", String.format("%.2f €", net),
+        //             "tax", String.format("%.2f €", tax),
+        //             "taxRate", 7
+        //         ));
+        //     }
+        // }
 
         // ...roomOrders (если есть), финальные итоги...
         if (roomOrders != null && !roomOrders.isEmpty()) {
             for (com.example.demo.classes.RoomOrder order : roomOrders) {
+                if ("Endreinigung".equalsIgnoreCase(order.getName())) continue; // пропускаем Endreinigung
                 double gross = order.getPrice();
                 double net = gross / 1.19;
                 double tax = gross - net;

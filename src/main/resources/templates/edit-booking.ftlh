@@ -477,7 +477,7 @@
                     </button>
                 </div>
 
-                <h2>Bestellungen im Zimmer</h2>
+                <h2>Dienstleistungen</h2>
                 <div class="guest-section">
                     <table id="roomOrdersTable">
                         <thead>

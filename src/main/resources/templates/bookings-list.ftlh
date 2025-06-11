@@ -130,6 +130,8 @@
         tr.clickable-row:hover {
             background: #e3e7fa !important;
         }
+        .delete-btn { color: #dc3545; background: none; border: none; cursor: pointer; font-size: 18px; }
+        .delete-btn:hover { color: #a71d2a; }
         @media (max-width: 900px) {
             .container { padding: 12px 2vw; }
             .search-bar input { width: 100px; }
@@ -139,7 +141,8 @@
         // Делает строку таблицы кликабельной
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('tr[data-href]').forEach(function(row) {
-                row.addEventListener('click', function() {
+                row.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('delete-btn')) return;
                     window.location = row.getAttribute('data-href');
                 });
             });
@@ -161,13 +164,32 @@
                                 document.getElementById('bookingsTbody').innerHTML = newTbody.innerHTML;
                                 // Повторно навешиваем обработчик на новые строки
                                 document.querySelectorAll('tr[data-href]').forEach(function(row) {
-                                    row.addEventListener('click', function() {
+                                    row.addEventListener('click', function(e) {
+                                        if (e.target.classList.contains('delete-btn')) return;
                                         window.location = row.getAttribute('data-href');
+                                    });
+                                });
+                                document.querySelectorAll('.delete-btn').forEach(function(btn) {
+                                    btn.addEventListener('click', function(e) {
+                                        e.stopPropagation();
+                                        if (confirm('Die Buchung wird gelöscht. Fortfahren?')) {
+                                            fetch('/booking/delete/' + btn.dataset.id, {method:'POST'}).then(() => location.reload());
+                                        }
                                     });
                                 });
                             }
                         });
                 }, 200); // debounce
+            });
+
+            // Кнопки удаления (навешиваем после загрузки)
+            document.querySelectorAll('.delete-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (confirm('Die Buchung wird gelöscht. Fortfahren?')) {
+                        fetch('/booking/delete/' + btn.dataset.id, {method:'POST'}).then(() => location.reload());
+                    }
+                });
             });
         });
     </script>
@@ -194,6 +216,7 @@
                     <th>Zimmer</th>
                     <th>Zeitraum</th>
                     <th>Betrag (Anzahlung)</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="bookingsTbody">
@@ -217,11 +240,16 @@
                                     -
                                 </#if>
                             </td>
+                            <td>
+                                <button class="delete-btn" data-id="${booking.ID}" title="Löschen">
+                                    <span class="material-icons">delete</span>
+                                </button>
+                            </td>
                         </tr>
                     </#list>
                 <#else>
                     <tr>
-                        <td colspan="5" style="text-align:center;">Keine Buchungen gefunden.</td>
+                        <td colspan="6" style="text-align:center;">Keine Buchungen gefunden.</td>
                     </tr>
                 </#if>
             </tbody>

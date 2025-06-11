@@ -181,6 +181,11 @@ private static final String BOOKINGS_FILE = "bookings.dat";
         saveAllToFile(); // Сохраняем в файл только если это явно указано
     }
 
+    @Override
+    protected void onItemDeleted(String id) {
+        saveAllToFile();
+    }
+
     public List<Booking> getAll() {
         // Возвращаем только уникальные брони по ID, в порядке добавления
         List<Booking> unique = new ArrayList<>();

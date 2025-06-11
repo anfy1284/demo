@@ -49,7 +49,15 @@ public abstract class BaseService<T> {
     }
 
     public boolean deleteById(String id) {
-        return items.removeIf(item -> getId(item).equals(id));
+        boolean removed = items.removeIf(item -> getId(item).equals(id));
+        if (removed) {
+            onItemDeleted(id);
+        }
+        return removed;
+    }
+
+    protected void onItemDeleted(String id) {
+        // Переопределяется в наследниках, если нужно
     }
 
     protected abstract String getId(T item);

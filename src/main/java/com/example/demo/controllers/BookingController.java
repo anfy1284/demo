@@ -540,4 +540,11 @@ public class BookingController extends BaseErrorController {
         model.addAttribute("q", q);
         return "bookings-list";
     }
+
+    @PostMapping("/booking/delete/{id}")
+    @ResponseBody
+    public ResponseEntity<?> deleteBooking(@PathVariable("id") String id) {
+        bookingService.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
 }
