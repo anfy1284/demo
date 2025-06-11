@@ -31,6 +31,10 @@ public class SecurityConfig {
             this.roles = roles;
             this.mustChangePassword = mustChangePassword;
         }
+
+        public String getUsername() { return username; }
+        public String[] getRoles() { return roles; }
+        public boolean isMustChangePassword() { return mustChangePassword; }
     }
 
     @Bean
@@ -38,6 +42,7 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/change-password", "/do-change-password").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN") // <--- добавьте эту строку
                 .anyRequest().authenticated()
             )
             .formLogin(form -> form
@@ -58,10 +63,18 @@ public class SecurityConfig {
     public InMemoryUserDetailsManager inMemoryUserDetailsManager(PasswordEncoder encoder) {
         loadUsersFromFile();
         if (users.isEmpty()) {
-            users.put("admin", new UserRecord("admin", "{noop}123", new String[]{"ADMIN"}, false));
-            users.put("Seiler", new UserRecord("Seiler", encoder.encode("123456"), new String[]{"USER"}, true));
+            // Используем нешифрованные пароли для первого входа
+            users.put("admin", new UserRecord("admin", "{noop}123456", new String[]{"ADMIN"}, true));
+            // saveUsersToFile();
+            // --- Почему то так работает а так как выше нет ---
+            UserRecord admin = users.get("admin");
+            if (admin != null) {
+                admin.passwordHash = encoder.encode("123456");
+                admin.mustChangePassword = true; // Требуется смена пароля                
+            }
             saveUsersToFile();
         }
+
         mustChangePassword.clear();
         for (UserRecord rec : users.values()) {
             mustChangePassword.put(rec.username, rec.mustChangePassword);
@@ -103,6 +116,31 @@ public class SecurityConfig {
         if (rec != null) {
             rec.passwordHash = encodedPassword;
             rec.mustChangePassword = false;
+            saveUsersToFile();
+        }
+    }
+
+    // --- Админские методы для управления пользователями ---
+    public static Collection<UserRecord> getAllUsers() {
+        return users.values();
+    }
+    public static boolean userExists(String username) {
+        return users.containsKey(username);
+    }
+    public static void addUser(String username, String encodedPassword, String[] roles, boolean mustChange) {
+        users.put(username, new UserRecord(username, encodedPassword, roles, mustChange));
+        mustChangePassword.put(username, mustChange);
+        saveUsersToFile();
+    }
+    public static void deleteUser(String username) {
+        users.remove(username);
+        mustChangePassword.remove(username);
+        saveUsersToFile();
+    }
+    public static void updateRoles(String username, String[] roles) {
+        UserRecord rec = users.get(username);
+        if (rec != null) {
+            rec.roles = roles;
             saveUsersToFile();
         }
     }
