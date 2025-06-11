@@ -17,6 +17,8 @@
             border-radius: 12px;
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.13);
             position: relative;
+            padding-bottom: 80px; /* чтобы контент не перекрывал footer при печати */
+            margin-top: 56px; /* чтобы не перекрывалось меню */
         }
         .header {
             display: flex;
@@ -80,7 +82,7 @@
             font-size: 15px;
             font-weight: bold;
         }
-        .print-btn {
+        .print-btn, .bw-print-btn {
             display: block;
             margin: 24px auto 0 auto;
             padding: 10px 24px;
@@ -92,9 +94,14 @@
             text-align: center;
             font-size: 16px;
             font-weight: bold;
+            transition: background 0.2s;
         }
-        .print-btn:hover {
+        .print-btn:hover, .bw-print-btn:hover {
             background-color: #0056b3;
+        }
+        .print-btn .material-icons, .bw-print-btn .material-icons {
+            vertical-align: middle;
+            margin-right: 8px;
         }
         .navbar {
             width: 100%;
@@ -130,12 +137,53 @@
             color: #ffeb3b;
             border-bottom: 2px solid #ffeb3b;
         }
-        .bill-container {
-            margin-top: 56px; /* чтобы не перекрывалось меню */
+        /* Черно-белый режим */
+        .bw-print body,
+        .bw-print .bill-container,
+        .bw-print .header,
+        .bw-print .contact-info,
+        .bw-print h1, .bw-print h2,
+        .bw-print .address-block,
+        .bw-print .invoice-table,
+        .bw-print .invoice-table th,
+        .bw-print .invoice-table td,
+        .bw-print .invoice-table tfoot td,
+        .bw-print .summary-row,
+        .bw-print .highlight-row,
+        .bw-print .footer,
+        .bw-print .navbar {
+            background: #fff !important;
+            color: #000 !important;
+            box-shadow: none !important;
+            border-color: #000 !important;
+        }
+        .bw-print .invoice-table th,
+        .bw-print .invoice-table td,
+        .bw-print .invoice-table tfoot td {
+            border: 1px solid #000 !important;
+        }
+        .bw-print .invoice-table th {
+            background: #fff !important;
+            color: #000 !important;
+        }
+        .bw-print .summary-row,
+        .bw-print .highlight-row {
+            background: #fff !important;
+            color: #000 !important;
+        }
+        .bw-print .navbar {
+            display: none !important;
+        }
+        .bw-print .print-btn,
+        .bw-print .bw-print-btn {
+            display: none !important;
+        }
+        .bw-print .logo {
+            filter: grayscale(1) contrast(1.2) brightness(1.1);
         }
         @media print {
             @page {
-                margin: 12mm 12mm 0 12mm; /* Добавлены отступы сверху, слева и справа */
+                margin: 12mm 12mm 0 20mm; /* сверху 12mm, справа 12mm, снизу 0, слева 20mm */
                 size: A4 portrait;
             }
             html, body {
@@ -162,15 +210,24 @@
                 transform-origin: top center;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                padding-bottom: 80px !important; /* для печати */
             }
-            .print-btn {
+            .print-btn, .bw-print-btn {
                 display: none !important;
             }
             .navbar {
                 display: none !important;
             }
+            #page-footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                padding-bottom: 12mm; /* небольшой отступ от низа страницы */
+            }
         }
     </style>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body>
     <div class="navbar">
@@ -180,6 +237,15 @@
         <a href="/invoice/new" class="menu-btn">Rechnung erstellen</a>
     </div>
     <div class="bill-container">
+        <!-- Кнопки печати -->
+        <!-- Удалено:
+        <button class="print-btn" onclick="printColor()">
+            <span class="material-icons">print</span> Drucken (Farbe)
+        </button>
+        <button class="bw-print-btn" onclick="printBW()">
+            <span class="material-icons">print_disabled</span> Drucken (schwarz/weiß)
+        </button>
+        -->
         <div style="border-top: 1px solid #000; margin-bottom: 10px;"></div>
         <div class="header">
             <img src="/images/beim_seiler_4c_logo_2021.png" alt="Logo" class="logo">
@@ -189,6 +255,7 @@
                 87484 Nesselwang<br>
                 Tel 08361/92527-08<br>
                 Fax 08361/92527-07<br>
+                E-Mail: info@beim-seiler.de<br>
                 www.beim-seiler.de<br>
                 Steuern. 125/217/31182
             </div>
@@ -321,29 +388,40 @@
             IBAN: DE09 7335 0000 0515 0433 47
         </div>
         -->
-        <div style="margin-top: 14px; font-size: 14px;">
-            <#--Den Betrag haben wir dankend in bar erhalten.<br>-->
-            Wir danken für Ihren Aufenthalt in unserem Hause!<br>
-            Malgorzata Fischer<br>
-            Sparkasse Allgäu<br>
-            IBAN: DE09 7335 0000 0515 0433 47
-        </div>
     </div>
+    <footer id="page-footer" style="display:none;">
+        Wir danken für Ihren Aufenthalt in unserem Hause!<br>
+        Malgorzata Fischer<br>
+        Sparkasse Allgäu<br>
+        IBAN: DE09 7335 0000 0515 0433 47
+    </footer>
     <script>
         window.onbeforeprint = function() {
+            // Показываем footer только при печати
+            var footer = document.getElementById('page-footer');
+            if (footer) footer.style.display = 'block';
+
+            // Прокручиваем страницу к началу, чтобы footer был на месте при печати
+            window.scrollTo(0, 0);
+
             var pageHeight = 1122; // px for A4 at 96dpi
             var content = document.querySelector('.bill-container');
             if (!content) return;
             var printBtn = content.querySelector('.print-btn');
-            var btnHeight = printBtn ? printBtn.offsetHeight : 0;
+            var bwBtn = content.querySelector('.bw-print-btn');
+            var btnHeight = (printBtn ? printBtn.offsetHeight : 0) + (bwBtn ? bwBtn.offsetHeight : 0);
             var contentHeight = content.scrollHeight - btnHeight;
             var scale = Math.min(1, pageHeight / contentHeight);
             content.style.transform = 'scale(' + scale + ')';
             content.style.transformOrigin = 'top center';
         };
         window.onafterprint = function() {
+            // Скрываем footer обратно после печати
+            var footer = document.getElementById('page-footer');
+            if (footer) footer.style.display = 'none';
             var content = document.querySelector('.bill-container');
             if (content) content.style.transform = '';
+            document.body.classList.remove('bw-print');
         };
     </script>
 </body>

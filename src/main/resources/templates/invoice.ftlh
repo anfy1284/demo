@@ -169,7 +169,7 @@
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 12px;
+            margin-top: 6px; /* уменьшено с 12px до 6px */
         }
         .invoice-controls .print-btn:hover {
             background: #0056b3;
@@ -244,8 +244,12 @@
                     </li>
                 </#list>
             </ul>
-            <button class="print-btn" onclick="window.print()">
-                <span class="material-icons" style="vertical-align:middle;">print</span> Drucken
+            <!-- Две кнопки печати -->
+            <button class="print-btn" onclick="printColor()">
+                <span class="material-icons" style="vertical-align:middle;">print</span> Drucken (Farbe)
+            </button>
+            <button class="print-btn" style="margin-top:10px;" onclick="printBW()">
+                <span class="material-icons" style="vertical-align:middle;">print</span> Drucken (schwarz/weiß)
             </button>
         </div>
     <!--
@@ -287,6 +291,19 @@
             });
         };
         </#if>
+        // Цветная печать
+        function printColor() {
+            document.body.classList.remove('bw-print');
+            window.print();
+        }
+        // Черно-белая печать
+        function printBW() {
+            document.body.classList.add('bw-print');
+            window.print();
+            setTimeout(function() {
+                document.body.classList.remove('bw-print');
+            }, 1000);
+        }
     </script>
     <style>
         @media print {
@@ -312,6 +329,30 @@
             body {
                 background: white !important;
             }
+        }
+        /* Стили для обеих кнопок печати */
+        .print-btn {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 0;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 6px; /* уменьшено с 12px до 6px */
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+        .print-btn:hover {
+            background: #0056b3;
+        }
+        .print-btn .material-icons {
+            font-size: 20px;
         }
     </style>
 </body>
