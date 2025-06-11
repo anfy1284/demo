@@ -1,0 +1,20 @@
+1. Add a new entity "Invoice" (счет) to the system:
+   - Define the structure of the invoice, including tables for items, totals, and metadata.
+   - Include a list of associated bookings (брони) in the invoice.
+
+2. Replace the "Print Invoice" button with a "Create Invoice" button:
+   - Update the UI for bookings to include the "Create Invoice" button.
+   - Ensure that clicking this button creates a new invoice and associates the current booking with it.
+
+3. Implement the invoice interface:
+   - Display all tables currently present in the invoice.
+   - Add a "Print" button for printing the invoice.
+   - Include save functionality for the invoice.
+
+4. Add a list of bookings to the invoice interface:
+   - Display the list of bookings associated with the invoice at the top of the interface.
+   - Allow multiple bookings to be included in a single invoice.
+
+5. Ensure proper linkage between bookings and invoices:
+   - When creating an invoice from a booking, automatically add the booking to the invoice's list.
+   - Update the database or data model to reflect this relationship.

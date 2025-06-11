@@ -12,7 +12,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,21 +31,26 @@ import java.util.Set;
 import com.example.demo.classes.RoomPricing; // Ensure this is the correct package for RoomPricing
 import com.example.demo.services.RoomPricingService; // Ensure this is the correct package for RoomPricingService
 import java.util.Arrays;
+import com.example.demo.classes.RoomOrder;
+import java.util.LinkedHashMap;
 
 @Controller
 @DependsOn("dataInitializer")
-public class BookingController {
+public class BookingController extends BaseErrorController {
 
     private final RoomService roomService;
     private final BookingService bookingService;
     private final GuestService guestService;
     private final RoomPricingService roomPricingService;
 
+    // Сделать контроллер singleton и доступным через Spring
+    @Autowired
     public BookingController(RoomService roomService, BookingService bookingService, GuestService guestService, RoomPricingService roomPricingService) {
         this.roomService = roomService;
         this.bookingService = bookingService;
         this.guestService = guestService;
         this.roomPricingService = roomPricingService;
+        // Можно добавить инициализацию или логирование, если нужно
     }
 
     @GetMapping({"/bookings/{year}/{month}", "/bookings", "/bookings/"})
@@ -66,7 +75,7 @@ public class BookingController {
             LocalDate endDate = startDate.withDayOfMonth(startDate.lengthOfMonth());
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("YYYY-MM-dd", java.util.Locale.ENGLISH);
-            DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy", java.util.Locale.ENGLISH);
+            DateTimeFormatter displayFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy (E)", java.util.Locale.GERMAN);
 
             List<String> formattedDatesOfMonth = startDate.datesUntil(endDate.plusDays(1))
                     .map(date -> date.format(formatter))
@@ -76,25 +85,41 @@ public class BookingController {
                     .map(date -> date.format(displayFormatter))
                     .collect(Collectors.toList());
 
-            // Подготовка данных для отображения бронирований
-            Map<String, Map<String, Booking>> bookingsMap = new HashMap<>();
+            // Новый bookingsMap: date -> roomId -> {startBooking, endBooking, ongoingBooking}
+            Map<String, Map<String, Map<String, Booking>>> bookingsMap = new HashMap<>();
             for (String date : formattedDatesOfMonth) {
                 bookingsMap.put(date, new HashMap<>());
                 for (Room room : rooms) {
-                    bookingsMap.get(date).put(room.getID(), null);
+                    Map<String, Booking> entry = new HashMap<>();
+                    entry.put("startBooking", null);
+                    entry.put("endBooking", null);
+                    entry.put("ongoingBooking", null);
+                    bookingsMap.get(date).put(room.getID(), entry);
                 }
             }
 
             for (Booking booking : bookingService.getAll()) {
                 LocalDate bookingStart = LocalDate.parse(booking.getStartDate());
                 LocalDate bookingEnd = LocalDate.parse(booking.getEndDate());
-                for (LocalDate date = bookingStart; !date.isAfter(bookingEnd); date = date.plusDays(1)) {
-                    String dateKey = date.format(formatter);
-                    if (bookingsMap.containsKey(dateKey)) {
-                        bookingsMap.get(dateKey).put(booking.getRoomId(), booking);
+                String startKey = bookingStart.format(formatter);
+                String endKey = bookingEnd.format(formatter);
+                if (bookingsMap.containsKey(startKey) && booking.getRoom() != null) {
+                    bookingsMap.get(startKey).get(booking.getRoom().getID()).put("startBooking", booking);
+                }
+                if (bookingsMap.containsKey(endKey) && booking.getRoom() != null) {
+                    bookingsMap.get(endKey).get(booking.getRoom().getID()).put("endBooking", booking);
+                }
+                // ongoingBooking: для всех дат между start и end, кроме самой start и end
+                if (booking.getRoom() != null) {
+                    LocalDate d = bookingStart.plusDays(1);
+                    while (d.isBefore(bookingEnd)) {
+                        String key = d.format(formatter);
+                        if (bookingsMap.containsKey(key)) {
+                            bookingsMap.get(key).get(booking.getRoom().getID()).put("ongoingBooking", booking);
+                        }
+                        d = d.plusDays(1);
                     }
                 }
-                // Добавляем информацию о продолжительности бронирования
                 booking.setDuration((int) (bookingEnd.toEpochDay() - bookingStart.toEpochDay() + 1));
             }
 
@@ -120,8 +145,7 @@ public class BookingController {
             e.printStackTrace();
 
             // Возврат страницы ошибки
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", e.toString());
         }
     }
 
@@ -130,45 +154,44 @@ public class BookingController {
         try {
             Booking booking = bookingService.getById(id);
             if (booking == null) {
-                throw new IllegalArgumentException("Booking not found for ID: " + id);
+                return error(model, "Booking not found for ID: " + id, null);
             }
 
-            // Рассчитываем счет для текущей брони
-            Map<String, Object> billSectionsRaw = calculateBill(
-                booking.getRoom().getID(),
-                booking.getStartDate(),
-                booking.getEndDate(),
-                (Integer) null,
-                booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
-                booking.getDogs(),
-                id,
-                booking.isIncludeBreakfast(),
-                0.0 // Adding prepayment as the last argument
-            );
-            Map<String, List<Map<String, String>>> billSections = new HashMap<>();
-            billSectionsRaw.forEach((key, value) -> {
-                if (value instanceof List) {
-                    billSections.put(key, (List<Map<String, String>>) value);
-                }
-            });
+            // // Рассчитываем счет для текущей брони
+            // Map<String, Object> billSectionsRaw = calculateBill(
+            //     booking.getRoom().getID(),
+            //     booking.getStartDate(),
+            //     booking.getEndDate(),
+            //     (Integer) null,
+            //     booking.getGuests().stream().map(Guest::getDateOfBirth).toList(),
+            //     booking.getDogs(),
+            //     id,
+            //     booking.isIncludeBreakfast(),
+            //     0.0 // Adding prepayment as the last argument
+            // );
+            // Map<String, List<Map<String, String>>> billSections = new HashMap<>();
+            // billSectionsRaw.forEach((key, value) -> {
+            //     if (value instanceof List) {
+            //         billSections.put(key, (List<Map<String, String>>) value);
+            //     }
+            // });
 
-            // Отладочный вывод для проверки содержимого счета
-            System.out.println("Bill sections: " + billSections);
+            // // Отладочный вывод для проверки содержимого счета
+            // System.out.println("Bill sections: " + billSections);
 
             model.addAttribute("method", "edit");
             model.addAttribute("booking", booking);
             model.addAttribute("rooms", roomService.getAll());
-            model.addAttribute("bill", billSections); // Передаем структуру счета в шаблон
+            // model.addAttribute("bill", billSections); // Передаем структуру счета в шаблон
 
             return "edit-booking";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
         }
     }
 
     @PostMapping("/booking/{id}")
-    public String updateBooking(
+    public Object updateBooking(
             @PathVariable("id") String id,
             @RequestParam("roomId") String roomId,
             @RequestParam("customerName") String customerName,
@@ -177,9 +200,14 @@ public class BookingController {
             @RequestParam(value = "description", required = false) String description,
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
-            @RequestParam(value = "customerAddress", required = false) String customerAddress,
+            @RequestParam(value = "customerStreet", required = false) String customerStreet,
+            @RequestParam(value = "customerHouseNumber", required = false) String customerHouseNumber,
+            @RequestParam(value = "customerPostalCode", required = false) String customerPostalCode,
+            @RequestParam(value = "customerCity", required = false) String customerCity,
+            @RequestParam(value = "customerCountry", required = false) String customerCountry,
             @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment,
             @RequestParam Map<String, String> allParams,
+            jakarta.servlet.http.HttpServletRequest request,
             Model model) {
         try {
             // Проверка дат
@@ -215,25 +243,34 @@ public class BookingController {
 
             // Update booking details
             booking.setRoom(room);
-            booking.setCustomerName(customerName);
+            booking.setCustomerName(customerName != null ? customerName : "");
             booking.setStartDate(startDate);
             booking.setEndDate(endDate);
             booking.setDescription(description);
-            booking.setDogs(dogs); // Устанавливаем количество собак
-            booking.setIncludeBreakfast(includeBreakfast); // Устанавливаем флаг завтраков
-            booking.setCustomerAddress(customerAddress); // Устанавливаем адрес клиента
+            booking.setDogs(dogs);
+            booking.setIncludeBreakfast(includeBreakfast);
+            booking.setCustomerStreet(customerStreet != null ? customerStreet : "");
+            booking.setCustomerHouseNumber(customerHouseNumber != null ? customerHouseNumber : "");
+            booking.setCustomerPostalCode(customerPostalCode != null ? customerPostalCode : "");
+            booking.setCustomerCity(customerCity != null ? customerCity : "");
+            booking.setCustomerCountry(customerCountry != null ? customerCountry : "");
             booking.setPrepayment(prepayment);
+
+            // Debug: Log all keys in allParams
+            System.out.println("All parameters: " + allParams.keySet());
 
             // Process guests
             List<Guest> guests = new ArrayList<>();
             allParams.keySet().stream()
                 .filter(key -> key.startsWith("guests[") && key.endsWith("].name"))
                 .forEach(key -> {
+                    System.out.println("Processing key: " + key); // Debug: Log the key being processed
                     String index = key.substring(7, key.indexOf("].name")); // Extract index from key
                     String guestName = allParams.get("guests[" + index + "].name");
                     String guestDob = allParams.get("guests[" + index + "].dateOfBirth");
 
                     if (guestName != null && guestDob != null) {
+                        System.out.println("Found guest: " + guestName + ", DOB: " + guestDob); // Debug: Log guest details
                         List<Guest> guestsFound = guestService.findByNameAndDateOfBirth(guestName, guestDob);
                         Guest guest = guestsFound.isEmpty() ? null : guestsFound.get(0);
                         if (guest == null) {
@@ -247,82 +284,128 @@ public class BookingController {
                 });
             booking.setGuests(guests);
 
+            // Process room orders
+            List<RoomOrder> roomOrders = new ArrayList<>();
+            allParams.keySet().stream()
+                .filter(key -> key.startsWith("roomOrders[") && key.endsWith("].bezeichnung"))
+                .forEach(key -> {
+                    String index = key.substring(11, key.indexOf("].bezeichnung"));
+                    String bezeichnung = allParams.get("roomOrders[" + index + "].bezeichnung");
+                    String preisStr = allParams.get("roomOrders[" + index + "].preis");
+                    double preis = 0.0;
+                    try {
+                        preis = preisStr != null && !preisStr.isEmpty() ? Double.parseDouble(preisStr) : 0.0;
+                    } catch (NumberFormatException ignored) {}
+                    if (bezeichnung != null && !bezeichnung.isEmpty()) {
+                        roomOrders.add(new RoomOrder(bezeichnung, preis));
+                    }
+                });
+            booking.setRoomOrders(roomOrders);
+
             // Save the booking
             bookingService.add(booking);
+
+            // Если AJAX-запрос, возвращаем JSON с bookingId
+            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                Map<String, String> result = new HashMap<>();
+                result.put("bookingId", booking.getID());
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
+            }
+
             return "redirect:/bookings";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Fehler beim Speichern der Buchung"));
+            }
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
         }
     }
 
     @GetMapping("/create-booking")
     public String createBookingForm(
-            @RequestParam("date") String date,
-            @RequestParam("roomId") String roomId,
+            @RequestParam(value = "date", required = false) String date,
+            @RequestParam(value = "roomId", required = false) String roomId,
             Model model) {
         try {
-            Room room = roomService.getById(roomId);
-            if (room == null) {
-                throw new IllegalArgumentException("Room not found for ID: " + roomId);
-            }
             Booking booking = Booking.createEmpty();
-            if (booking == null) { // Reintroduce null check
-                throw new IllegalArgumentException("Failed to create a new booking instance.");
-            }
-            booking.setRoom(room);
-            booking.setStartDate(date);
-            booking.setEndDate(date);
-
-            // Calculate bill for the initial state
-            RoomPricing roomPricing = roomPricingService.getRoomPricing(roomId);
-            if (roomPricing != null) {
-                LocalDate start = LocalDate.parse(date);
-                Double dailyPrice = roomPricing.getPrice(start, 1); // Default guest count = 1
-                if (dailyPrice != null) {
-                    double totalPrice = dailyPrice;
-                    Map<String, Object> bill = new HashMap<>();
-                    bill.put("accommodationPrice", String.format("%.2f", dailyPrice));
-                    bill.put("totalPrice", String.format("%.2f", totalPrice));
-                    model.addAttribute("bill", bill);
+            if (roomId != null && !roomId.isEmpty()) {
+                Room room = roomService.getById(roomId);
+                if (room == null) {
+                    throw new IllegalArgumentException("Room not found for ID: " + roomId);
                 }
+                booking.setRoom(room);
+            }
+            if (date != null && !date.isEmpty()) {
+                booking.setStartDate(date);
+                // Устанавливаем endDate на следующий день после startDate
+                LocalDate start = LocalDate.parse(date);
+                booking.setEndDate(start.plusDays(1).toString());
             }
             model.addAttribute("method", "create");
             model.addAttribute("booking", booking);
             model.addAttribute("rooms", roomService.getAll());
             return "edit-booking";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", null);
         }
     }
 
     @PostMapping("/create-booking")
-    public String createBooking(
+    public Object createBooking(
             @RequestParam("date") String date,
             @RequestParam("roomId") String roomId,
             @RequestParam("customerName") String customerName,
             @RequestParam("description") String description,
-            @RequestParam(value = "customerAddress", required = false) String customerAddress,
+            @RequestParam(value = "customerStreet", required = false) String customerStreet,
+            @RequestParam(value = "customerHouseNumber", required = false) String customerHouseNumber,
+            @RequestParam(value = "customerPostalCode", required = false) String customerPostalCode,
+            @RequestParam(value = "customerCity", required = false) String customerCity,
+            @RequestParam(value = "customerCountry", required = false) String customerCountry,
+            jakarta.servlet.http.HttpServletRequest request,
             Model model) {
         try {
             Room room = roomService.getById(roomId);
             if (room == null) {
                 throw new IllegalArgumentException("Room not found for ID: " + roomId);
             }
+            if (customerName == null || customerName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Kundenname darf nicht leer sein.");
+            }
+            if (date == null || date.trim().isEmpty()) {
+                throw new IllegalArgumentException("Anfangсdatum darf nicht leer sein.");
+            }
             Booking booking = new Booking();
             booking.setStartDate(date);
             booking.setEndDate(date); // Assuming single-day booking for simplicity
-            booking.setCustomerName(customerName);
+            booking.setCustomerName(customerName != null ? customerName : "");
             booking.setDescription(description);
             booking.setRoom(room);
             booking.setStatus("booked");
-            booking.setCustomerAddress(customerAddress); // Set customer address
+            booking.setCustomerStreet(customerStreet != null ? customerStreet : "");
+            booking.setCustomerHouseNumber(customerHouseNumber != null ? customerHouseNumber : "");
+            booking.setCustomerPostalCode(customerPostalCode != null ? customerPostalCode : "");
+            booking.setCustomerCity(customerCity != null ? customerCity : "");
+            booking.setCustomerCountry(customerCountry != null ? customerCountry : "");
             bookingService.add(booking);
+
+            // Если AJAX-запрос, возвращаем JSON с bookingId
+            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                Map<String, String> result = new HashMap<>();
+                result.put("bookingId", booking.getID());
+                return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
+            }
+
+            // Обычный редирект для обычных форм
             return "redirect:/booking/" + booking.getID();
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            if ("XMLHttpRequest".equals(request.getHeader("X-Requested-With"))) {
+                return ResponseEntity.badRequest()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "Fehler beim Speichern der Buchung"));
+            }
+            return error(model, e.getMessage() != null ? e.getMessage() : "Fehler при сохранении бронирования", null);
         }
     }
 
@@ -343,246 +426,33 @@ public class BookingController {
             @RequestParam(value = "dogs", required = false, defaultValue = "0") int dogs,
             @RequestParam(value = "bookingId", required = false) String bookingId,
             @RequestParam(value = "includeBreakfast", required = false, defaultValue = "false") boolean includeBreakfast,
-            @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment) {
-        Map<String, Object> billSections = new HashMap<>();
-        List<Map<String, String>> billItems = new ArrayList<>();
-        List<Map<String, String>> kurbeitragItems = new ArrayList<>();
-        List<Map<String, String>> gesamtItems = new ArrayList<>();
-        double totalPrice = 0.0;
-
-        try {
-            // Учитываем предоплату из параметра, если она передана
-            if (bookingId != null && prepayment == 0.0) {
-                Booking booking = bookingService.getById(bookingId);
-                if (booking != null) {
-                    prepayment = booking.getPrepayment();
-                }
+            @RequestParam(value = "prepayment", required = false, defaultValue = "0") double prepayment,
+            @RequestParam(value = "roomOrders", required = false) List<String> roomOrdersParam
+    ) {
+        // Вместо дублирования логики, вызываем roomPricingService.calculateBill
+        com.example.demo.classes.Room room = roomService.getById(roomId);
+        List<com.example.demo.classes.Guest> guests = new ArrayList<>();
+        if (guestDatesOfBirth != null) {
+            for (String dob : guestDatesOfBirth) {
+                com.example.demo.classes.Guest g = new com.example.demo.classes.Guest();
+                g.setDateOfBirth(dob);
+                guests.add(g);
             }
-
-            if (bookingId != null) {
-                Booking booking = bookingService.getById(bookingId);
-                if (booking == null) {
-                    throw new IllegalArgumentException("Booking not found for ID: " + bookingId);
-                }
-                roomId = booking.getRoom().getID();
-                startDate = booking.getStartDate();
-                endDate = booking.getEndDate();
-                guestDatesOfBirth = booking.getGuests().stream()
-                        .map(Guest::getDateOfBirth)
-                        .toList();
-                dogs = booking.getDogs(); // Исправлено: добавлен метод getDogs в Booking
-            }
-
-            if (roomId == null || startDate == null || endDate == null) {
-                throw new IllegalArgumentException("Missing required parameters for bill calculation.");
-            }
-
-            RoomPricing roomPricing = roomPricingService.getRoomPricing(roomId);
-            if (roomPricing == null) {
-                throw new IllegalArgumentException("Pricing not found for room ID: " + roomId);
-            }
-
-            LocalDate start = LocalDate.parse(startDate);
-            LocalDate end = LocalDate.parse(endDate);
-            long days = start.datesUntil(end.plusDays(1)).count();
-
-            double accommodationPrice = 0.0;
-            double priceForChildren3To5 = roomPricing.getPriceForChildren3To5();
-            double priceForChildrenUnder3 = roomPricing.getPriceForChildrenUnder3();
-            LocalDate today = LocalDate.now();
-            int adultGuestCount = 0;
-            int children3To5Count = 0;
-            int childrenUnder3Count = 0;
-            int children6To15Count = 0;
-
-            if (guestDatesOfBirth != null) {
-                for (String dob : guestDatesOfBirth) {
-                    LocalDate birthDate = LocalDate.parse(dob);
-                    int age = today.getYear() - birthDate.getYear();
-                    if (today.isBefore(birthDate.plusYears(age))) {
-                        age--;
-                    }
-                    if (age <= 2) {
-                        childrenUnder3Count++;
-                    } else if (age >= 3 && age <= 5) {
-                        children3To5Count++;
-                    } else if (age >= 6 && age <= 15) {
-                        children6To15Count++;
-                    } else if (age >= 16) {
-                        adultGuestCount++;
-                    }
-                }
-            }
-
-            // Рассчитываем стоимость проживания для взрослых
-            Double dailyPriceForAdults = roomPricing.getPrice(start, adultGuestCount + children6To15Count);
-            if (dailyPriceForAdults == null) {
-                throw new IllegalArgumentException("No pricing available for the given date and adult guest count.");
-            }
-            accommodationPrice += dailyPriceForAdults * days;
-
-            // Рассчитываем стоимость для детей от 3 до 5 лет
-            double children3To5Price = children3To5Count * priceForChildren3To5 * days;
-
-            // Рассчитываем стоимость за собак
-            double dogFee = dogs * roomPricing.getDogFeePerNight() * days;
-
-            // Рассчитываем курортный сбор
-            double kurbeitragUnder6 = childrenUnder3Count * roomPricing.getKurbeitragUnder6() * days;
-            double kurbeitrag6To15 = children6To15Count * roomPricing.getKurbeitrag6To15() * days;
-            double kurbeitrag16AndOlder = adultGuestCount * roomPricing.getKurbeitrag16AndOlder() * days;
-            double totalKurbeitrag = kurbeitragUnder6 + kurbeitrag6To15 + kurbeitrag16AndOlder;
-
-            // Add Kurbeitrag items to a separate list
-            if (kurbeitragUnder6 > 0) {
-                kurbeitragItems.add(Map.of(
-                    "key", "kurbeitragUnder6",
-                    "label", "0-5 Jahre",
-                    "value", String.format("%.2f €", kurbeitragUnder6)
-                ));
-            }
-            if (kurbeitrag6To15 > 0) {
-                kurbeitragItems.add(Map.of(
-                    "key", "kurbeitrag6To15",
-                    "label", "6-15 Jahre",
-                    "value", String.format("%.2f €", kurbeitrag6To15)
-                ));
-            }
-            if (kurbeitrag16AndOlder > 0) {
-                kurbeitragItems.add(Map.of(
-                    "key", "kurbeitrag16AndOlder",
-                    "label", "16+ Jahre",
-                    "value", String.format("%.2f €", kurbeitrag16AndOlder)
-                ));
-            }
-
-            // Add total row for Kurbeitrag
-            kurbeitragItems.add(Map.of(
-                "key", "totalKurbeitrag",
-                "label", "Gesamt",
-                "value", String.format("%.2f €", totalKurbeitrag)
-            ));
-
-            // Add other bill items to the main list
-            if (accommodationPrice > 0) {
-                billItems.add(Map.of(
-                    "key", "accommodationPrice",
-                    "label", "Unterkunftspreis (Erwachsene и Kinder ab 6 Jahren)",
-                    "value", String.format("%.2f €", accommodationPrice)
-                ));
-            }
-            if (children3To5Price > 0) {
-                billItems.add(Map.of(
-                    "key", "children3To5Price",
-                    "label", "Kinderpreis (3-5 Jahre)",
-                    "value", String.format("%.2f €", children3To5Price)
-                ));
-            }
-            /*
-            if (childrenUnder3Count > 0) {
-                billItems.add(Map.of(
-                    "key", "childrenUnder3Price",
-                    "label", "Kinderpreis (0-2 Jahre, kostenlos)",
-                    "value", "0.00 €"
-                ));
-            }
-            */
-            if (dogFee > 0) {
-                billItems.add(Map.of(
-                    "key", "dogFee",
-                    "label", "Gebühr für den Hund",
-                    "value", String.format("%.2f €", dogFee)
-                ));
-            }
-
-            // Добавляем стоимость финальной уборки для короткого пребывания
-            if (days <= 3) {
-                double finalCleaningFee = roomPricing.getFinalCleaningFeeShortStay();
-                billItems.add(Map.of(
-                    "key", "finalCleaningFee",
-                    "label", "Endreinigung (Kurzaufenthalt)",
-                    "value", String.format("%.2f €", finalCleaningFee)
-                ));
-                totalPrice += finalCleaningFee;
-            }
-
-            // Добавляем стоимость завтраков по категориям
-            if (includeBreakfast) {
-                double breakfastPriceUnder3 = childrenUnder3Count * roomPricing.getBreakfastPriceUnder3() * days;
-                double breakfastPrice3To5 = children3To5Count * roomPricing.getBreakfastPrice3To5() * days;
-                double breakfastPrice6To13 = children6To15Count * roomPricing.getBreakfastPrice6To13() * days;
-                double breakfastPrice14AndOlder = adultGuestCount * roomPricing.getBreakfastPrice14AndOlder() * days;
-
-                if (breakfastPriceUnder3 > 0) {
-                    billItems.add(Map.of(
-                        "key", "breakfastPriceUnder3",
-                        "label", "Frühstück (0-2 Jahre)",
-                        "value", String.format("%.2f €", breakfastPriceUnder3)
-                    ));
-                }
-                if (breakfastPrice3To5 > 0) {
-                    billItems.add(Map.of(
-                        "key", "breakfastPrice3To5",
-                        "label", "Frühstück (3-5 Jahre)",
-                        "value", String.format("%.2f €", breakfastPrice3To5)
-                    ));
-                }
-                if (breakfastPrice6To13 > 0) {
-                    billItems.add(Map.of(
-                        "key", "breakfastPrice6To13",
-                        "label", "Frühstück (6-13 Jahre)",
-                        "value", String.format("%.2f €", breakfastPrice6To13)
-                    ));
-                }
-                if (breakfastPrice14AndOlder > 0) {
-                    billItems.add(Map.of(
-                        "key", "breakfastPrice14AndOlder",
-                        "label", "Frühstück (14+ Jahre)",
-                        "value", String.format("%.2f €", breakfastPrice14AndOlder)
-                    ));
-                }
-                totalPrice += breakfastPriceUnder3 + breakfastPrice3To5 + breakfastPrice6To13 + breakfastPrice14AndOlder;
-            }
-
-            // Итоговая строка
-            totalPrice += accommodationPrice + children3To5Price + dogFee;
-
-            // Добавляем строку с итоговой суммой
-            billItems.add(Map.of(
-                "key", "totalPrice",
-                "label", "Betrag",
-                "value", String.format("%.2f €", totalPrice)
-            ));
-
-            // Вычисляем 7% MwSt от итоговой суммы
-            double mwst = totalPrice * 0.07;
-
-            // Добавляем строки в раздел "Gesamt"
-            gesamtItems.add(Map.of(
-                "key", "prepayment",
-                "label", "Anzahlung",
-                "value", String.format("%.2f €", prepayment)
-            ));
-            gesamtItems.add(Map.of(
-                "key", "totalSum",
-                "label", "Restbetrag",
-                "value", String.format("%.2f €", totalPrice + totalKurbeitrag - prepayment)
-            ));
-
-            // Добавляем все разделы в ответ
-            billSections.put("main", billItems);
-            billSections.put("kurbeitrag", kurbeitragItems);
-            billSections.put("gesamt", gesamtItems);
-            billSections.put("mwst", String.format("%.2f €", mwst)); // Добавляем MwSt в ответ
-
-        } catch (Exception e) {
-            billItems.add(Map.of(
-                "key", "error",
-                "label", "Fehler",
-                "value", e.getMessage()
-            ));
         }
-        return billSections;
+        java.time.LocalDate start = java.time.LocalDate.parse(startDate);
+        java.time.LocalDate end = java.time.LocalDate.parse(endDate);
+        List<com.example.demo.classes.RoomOrder> roomOrders = new ArrayList<>();
+        // ...parse roomOrdersParam if needed...
+        return roomPricingService.calculateBill(
+            room,
+            start,
+            end,
+            guests,
+            dogs,
+            includeBreakfast,
+            prepayment,
+            roomOrders
+        );
     }
 
     @GetMapping("/booking/{id}/bill")
@@ -593,20 +463,32 @@ public class BookingController {
                 throw new IllegalArgumentException("Booking not found for ID: " + id);
             }
 
+            // Формируем адрес для отображения
+            List<String> customerAddressLines = new ArrayList<>();
+            if (booking.getCustomerStreet() != null && !booking.getCustomerStreet().isEmpty()) {
+                String line1 = (booking.getCustomerStreet() != null ? booking.getCustomerStreet() : "") +
+                               (booking.getCustomerHouseNumber() != null && !booking.getCustomerHouseNumber().isEmpty() ? " " + booking.getCustomerHouseNumber() : "");
+                customerAddressLines.add(line1.trim());
+            }
+            if (booking.getCustomerPostalCode() != null && booking.getCustomerCity() != null &&
+                !booking.getCustomerPostalCode().isEmpty() && !booking.getCustomerCity().isEmpty()) {
+                customerAddressLines.add((booking.getCustomerPostalCode() + " " + booking.getCustomerCity()).trim());
+            }
+            if (booking.getCustomerCountry() != null && !booking.getCustomerCountry().isEmpty()) {
+                customerAddressLines.add(booking.getCustomerCountry());
+            }
+
             // Форматируем даты в формате "ДД.мм.ГГГГ"
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
             String formattedStartDate = LocalDate.parse(booking.getStartDate()).format(formatter);
             String formattedEndDate = LocalDate.parse(booking.getEndDate()).format(formatter);
-
-            // Разделяем адрес клиента на строки
-            String[] customerAddressLines = booking.getCustomerAddress().split(",");
 
             // Добавляем текущую дату в модель
             String currentDate = LocalDate.now().format(formatter);
             model.addAttribute("currentDate", currentDate);
             model.addAttribute("formattedStartDate", formattedStartDate);
             model.addAttribute("formattedEndDate", formattedEndDate);
-            model.addAttribute("customerAddressLines", Arrays.asList(customerAddressLines));
+            model.addAttribute("customerAddressLines", customerAddressLines);
 
             model.addAttribute("booking", booking);
             model.addAttribute("bill", calculateBill(
@@ -618,12 +500,51 @@ public class BookingController {
                 booking.getDogs(),
                 id,
                 booking.isIncludeBreakfast(),
-                0.0
+                0.0,
+                null // Pass null for roomOrdersParam
             ));
             return "bill";
         } catch (Exception e) {
-            model.addAttribute("errorMessage", e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
-            return "error";
+            System.err.println("Error in viewBill: " + e.getMessage());
+            e.printStackTrace();
+            return error(model, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.", e.toString());
         }
+    }
+
+    @GetMapping("/bookings-list")
+    public String bookingsList(
+            @RequestParam(value = "q", required = false) String q,
+            Model model) {
+        // Убираем дубликаты по ID
+        List<Booking> all = bookingService.getAll();
+        Map<String, Booking> unique = new LinkedHashMap<>();
+        for (Booking b : all) {
+            if (b.getID() != null && !unique.containsKey(b.getID())) {
+                unique.put(b.getID(), b);
+            }
+        }
+        List<Booking> filtered;
+        if (q != null && !q.trim().isEmpty()) {
+            String query = q.trim().toLowerCase();
+            filtered = unique.values().stream().filter(b ->
+                (b.getCustomerName() != null && b.getCustomerName().toLowerCase().contains(query)) ||
+                (b.getRoom() != null && b.getRoom().getName() != null && b.getRoom().getName().toLowerCase().contains(query)) ||
+                (b.getStartDate() != null && b.getStartDate().contains(query)) ||
+                (b.getEndDate() != null && b.getEndDate().contains(query)) ||
+                (b.getDescription() != null && b.getDescription().toLowerCase().contains(query))
+            ).toList();
+        } else {
+            filtered = new ArrayList<>(unique.values());
+        }
+        model.addAttribute("bookings", filtered);
+        model.addAttribute("q", q);
+        return "bookings-list";
+    }
+
+    @PostMapping("/booking/delete/{id}")
+    @ResponseBody
+    public ResponseEntity<?> deleteBooking(@PathVariable("id") String id) {
+        bookingService.deleteById(id);
+        return ResponseEntity.ok().build();
     }
 }

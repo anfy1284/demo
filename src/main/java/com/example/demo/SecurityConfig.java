@@ -1,0 +1,131 @@
+package com.example.demo;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.core.userdetails.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
+
+import java.io.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+
+@Configuration
+public class SecurityConfig {
+
+    private static final String USERS_FILE = "users.dat";
+    private static final ConcurrentHashMap<String, Boolean> mustChangePassword = new ConcurrentHashMap<>();
+    private static final Map<String, UserRecord> users = new ConcurrentHashMap<>();
+
+    public static class UserRecord implements Serializable {
+        public String username;
+        public String passwordHash;
+        public String[] roles;
+        public boolean mustChangePassword;
+        public UserRecord(String username, String passwordHash, String[] roles, boolean mustChangePassword) {
+            this.username = username;
+            this.passwordHash = passwordHash;
+            this.roles = roles;
+            this.mustChangePassword = mustChangePassword;
+        }
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/css/**", "/js/**", "/images/**", "/change-password", "/do-change-password").permitAll()
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                .loginPage("/login").permitAll()
+                .defaultSuccessUrl("/post-login", true)
+            )
+            .logout(logout -> logout.permitAll());
+        http.csrf(csrf -> csrf.disable());
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public InMemoryUserDetailsManager inMemoryUserDetailsManager(PasswordEncoder encoder) {
+        loadUsersFromFile();
+        if (users.isEmpty()) {
+            users.put("admin", new UserRecord("admin", "{noop}123", new String[]{"ADMIN"}, false));
+            users.put("Seiler", new UserRecord("Seiler", encoder.encode("123456"), new String[]{"USER"}, true));
+            saveUsersToFile();
+        }
+        mustChangePassword.clear();
+        for (UserRecord rec : users.values()) {
+            mustChangePassword.put(rec.username, rec.mustChangePassword);
+        }
+        List<UserDetails> userDetailsList = new ArrayList<>();
+        for (UserRecord rec : users.values()) {
+            userDetailsList.add(
+                User.withUsername(rec.username)
+                    .password(rec.passwordHash)
+                    .roles(rec.roles)
+                    .build()
+            );
+        }
+        return new InMemoryUserDetailsManager(userDetailsList);
+    }
+
+    // Методы для смены пароля и обновления mustChangePassword
+    public static boolean mustChangePassword(String username) {
+        return mustChangePassword.getOrDefault(username, false);
+    }
+    public static void setPasswordChanged(String username) {
+        mustChangePassword.put(username, false);
+        UserRecord rec = users.get(username);
+        if (rec != null) {
+            rec.mustChangePassword = false;
+            saveUsersToFile();
+        }
+    }
+    public static void setPasswordMustChange(String username) {
+        mustChangePassword.put(username, true);
+        UserRecord rec = users.get(username);
+        if (rec != null) {
+            rec.mustChangePassword = true;
+            saveUsersToFile();
+        }
+    }
+    public static void updatePassword(String username, String encodedPassword) {
+        UserRecord rec = users.get(username);
+        if (rec != null) {
+            rec.passwordHash = encodedPassword;
+            rec.mustChangePassword = false;
+            saveUsersToFile();
+        }
+    }
+
+    // Сериализация пользователей
+    private static void saveUsersToFile() {
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(USERS_FILE))) {
+            out.writeObject(new ArrayList<>(users.values()));
+        } catch (Exception e) {
+            System.err.println("Failed to save users: " + e.getMessage());
+        }
+    }
+    private static void loadUsersFromFile() {
+        File f = new File(USERS_FILE);
+        if (!f.exists()) return;
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(f))) {
+            List<UserRecord> list = (List<UserRecord>) in.readObject();
+            users.clear();
+            for (UserRecord rec : list) {
+                users.put(rec.username, rec);
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to load users: " + e.getMessage());
+        }
+    }
+}

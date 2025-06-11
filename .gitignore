@@ -34,3 +34,9 @@ build/
 
 # Ignore target directory
 target/
+
+# Ignore application data files (users, bookings, guests, invoices, etc.)
+users.dat
+bookings.dat
+guests.dat
+invoices.dat
