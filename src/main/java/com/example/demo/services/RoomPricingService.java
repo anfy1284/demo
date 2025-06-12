@@ -304,6 +304,11 @@ public class RoomPricingService {
         return result;
     }
 
+    public void reloadAllFromFile() {
+        // Если реализовано сохранение/загрузка roomPricingMap, здесь перечитывайте файл.
+        // Если нет - оставьте пустым или реализуйте по аналогии с другими сервисами.
+    }
+
     private double parseEuro(Object euroString) {
         if (euroString == null) return 0.0;
         String str = euroString.toString().replace("€", "").replace(" ", "").replace(",", ".").trim();

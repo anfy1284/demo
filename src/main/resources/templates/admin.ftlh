@@ -65,5 +65,30 @@
     </select>
     <button type="submit">Добавить</button>
 </form>
+
+<h3>Загрузка и выгрузка файлов данных</h3>
+<form action="/admin/upload" method="post" enctype="multipart/form-data">
+    <label>Загрузить файл:
+        <input type="file" name="file" required>
+    </label>
+    <select name="target">
+        <option value="users.dat">users.dat</option>
+        <option value="bookings.dat">bookings.dat</option>
+        <option value="guests.dat">guests.dat</option>
+        <option value="invoices.dat">invoices.dat</option>
+    </select>
+    <button type="submit">Загрузить</button>
+</form>
+<br>
+<b>Скачать файл:</b>
+<ul>
+    <li><a href="/admin/download?filename=users.dat">users.dat</a></li>
+    <li><a href="/admin/download?filename=bookings.dat">bookings.dat</a></li>
+    <li><a href="/admin/download?filename=guests.dat">guests.dat</a></li>
+    <li><a href="/admin/download?filename=invoices.dat">invoices.dat</a></li>
+</ul>
+<form action="/admin/reload" method="post" style="margin-top:16px;">
+    <button type="submit">Перечитать все файлы данных</button>
+</form>
 </body>
 </html>

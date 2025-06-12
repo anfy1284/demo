@@ -48,14 +48,17 @@ private static final String BOOKINGS_FILE = "bookings.dat";
         File file = new File(BOOKINGS_FILE);
         if (!file.exists()) {
             System.out.println("Bookings file not found. Starting with an empty list.");
+            items.clear(); // <--- очищаем список
             return;
         }
         if (file.length() == 0) {
             System.out.println("Bookings file is empty. Starting with an empty list.");
+            items.clear(); // <--- очищаем список
             return;
         }
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             List<SerializableBooking> serializableBookings = (List<SerializableBooking>) ois.readObject();
+            items.clear(); // <--- очищаем список перед загрузкой
             for (SerializableBooking serializableBooking : serializableBookings) {
                 Booking booking = serializableBooking.toBooking();
 

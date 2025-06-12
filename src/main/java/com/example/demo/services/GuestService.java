@@ -58,6 +58,7 @@ public class GuestService extends BaseService<Guest> {
     public void loadAllFromFile() {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(GUESTS_FILE))) {
             List<Guest> loadedGuests = (List<Guest>) ois.readObject();
+            items.clear(); // <--- очищаем список перед загрузкой
             for (Guest guest : loadedGuests) {
                 add(guest, false); // Add to memory without triggering save
             }

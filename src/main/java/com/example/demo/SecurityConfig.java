@@ -166,4 +166,11 @@ public class SecurityConfig {
             System.err.println("Failed to load users: " + e.getMessage());
         }
     }
+    public static void reloadUsersFromFile() {
+        loadUsersFromFile();
+        mustChangePassword.clear();
+        for (UserRecord rec : users.values()) {
+            mustChangePassword.put(rec.username, rec.mustChangePassword);
+        }
+    }
 }

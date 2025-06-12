@@ -63,4 +63,8 @@ public class InvoiceService {
             .max().orElse(minNumber - 1);
         return String.valueOf(max + 1);
     }
+
+    public synchronized void reloadAllFromFile() {
+        loadAll();
+    }
 }
