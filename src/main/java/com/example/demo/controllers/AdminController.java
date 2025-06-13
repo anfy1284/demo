@@ -17,6 +17,7 @@ import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 
 import java.io.*;
 import java.util.*;
@@ -31,18 +32,21 @@ public class AdminController {
     private final GuestService guestService;
     private final InvoiceService invoiceService;
     private final RoomPricingService roomPricingService;
+    private final InMemoryUserDetailsManager userDetailsManager;
 
     @Autowired
     public AdminController(PasswordEncoder passwordEncoder,
                           BookingService bookingService,
                           GuestService guestService,
                           InvoiceService invoiceService,
-                          RoomPricingService roomPricingService) {
+                          RoomPricingService roomPricingService,
+                          InMemoryUserDetailsManager userDetailsManager) {
         this.passwordEncoder = passwordEncoder;
         this.bookingService = bookingService;
         this.guestService = guestService;
         this.invoiceService = invoiceService;
         this.roomPricingService = roomPricingService;
+        this.userDetailsManager = userDetailsManager;
     }
 
     @GetMapping
@@ -62,6 +66,14 @@ public class AdminController {
         } else {
             String encoded = password.startsWith("{noop}") ? password : passwordEncoder.encode(password);
             SecurityConfig.addUser(username, encoded, new String[]{role}, true);
+            SecurityConfig.reloadUsersFromFile();
+            // --- обновляем пользователей в InMemoryUserDetailsManager ---
+            org.springframework.security.core.userdetails.UserDetails newUser =
+                org.springframework.security.core.userdetails.User.withUsername(username)
+                    .password(encoded)
+                    .roles(role)
+                    .build();
+            userDetailsManager.createUser(newUser);
         }
         return "redirect:/admin";
     }
@@ -69,6 +81,8 @@ public class AdminController {
     @PostMapping("/delete")
     public String deleteUser(@RequestParam String username) {
         SecurityConfig.deleteUser(username);
+        SecurityConfig.reloadUsersFromFile();
+        userDetailsManager.deleteUser(username);
         return "redirect:/admin";
     }
 
@@ -77,12 +91,21 @@ public class AdminController {
         String encoded = password.startsWith("{noop}") ? password : passwordEncoder.encode(password);
         SecurityConfig.updatePassword(username, encoded);
         SecurityConfig.setPasswordMustChange(username);
+        SecurityConfig.reloadUsersFromFile();
+        org.springframework.security.core.userdetails.UserDetails user =
+            userDetailsManager.loadUserByUsername(username);
+        org.springframework.security.core.userdetails.UserDetails updated =
+            org.springframework.security.core.userdetails.User.withUserDetails(user)
+                .password(encoded)
+                .build();
+        userDetailsManager.updateUser(updated);
         return "redirect:/admin";
     }
 
     @PostMapping("/force-change")
     public String forceChange(@RequestParam String username) {
         SecurityConfig.setPasswordMustChange(username);
+        SecurityConfig.reloadUsersFromFile();
         return "redirect:/admin";
     }
 
@@ -90,6 +113,14 @@ public class AdminController {
     public String editUser(@RequestParam String username,
                            @RequestParam String[] roles) {
         SecurityConfig.updateRoles(username, roles);
+        SecurityConfig.reloadUsersFromFile();
+        org.springframework.security.core.userdetails.UserDetails user =
+            userDetailsManager.loadUserByUsername(username);
+        org.springframework.security.core.userdetails.UserDetails updated =
+            org.springframework.security.core.userdetails.User.withUserDetails(user)
+                .roles(roles)
+                .build();
+        userDetailsManager.updateUser(updated);
         return "redirect:/admin";
     }
 

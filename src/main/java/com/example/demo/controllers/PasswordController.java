@@ -58,8 +58,16 @@ public class PasswordController {
         }
 
         // Меняем пароль и сбрасываем флаг mustChangePassword
-        SecurityConfig.updatePassword(username, passwordEncoder.encode(newPassword));
-        model.addAttribute("message", "Passwort erfolgreich geändert.");
+        String encoded = passwordEncoder.encode(newPassword);
+        userDetailsManager.updateUser(
+            org.springframework.security.core.userdetails.User.withUserDetails(user)
+                .password(encoded)
+                .build()
+        );
+        SecurityConfig.updatePassword(username, encoded);
+        SecurityConfig.reloadUsersFromFile(); // <--- обновляем пользователей в памяти после смены пароля
+        // Также обновляем пароль в InMemoryUserDetailsManager для текущей сессии
+        // (если userDetailsManager не singleton, используйте аналогичный подход как в AdminController)
         return "redirect:/";
     }
 }

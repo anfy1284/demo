@@ -55,7 +55,7 @@ public class InvoiceService {
     }
 
     public synchronized String getNextInvoiceNumber() {
-        int minNumber = 1216;
+        int minNumber = 1222;
         int max = invoices.stream()
             .map(Invoice::getNumber)
             .filter(n -> n.matches("\\d+"))
