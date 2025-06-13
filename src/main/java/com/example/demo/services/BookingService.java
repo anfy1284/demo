@@ -20,7 +20,7 @@ public class BookingService extends BaseService<Booking> {
         this.roomService = roomService;
         this.guestService = guestService;
     }
-private static final String BOOKINGS_FILE = "bookings.dat";
+private static final String BOOKINGS_FILE = getDataFilePath("bookings.dat");
 
     @Override
     protected String getId(Booking booking) {
@@ -200,5 +200,16 @@ private static final String BOOKINGS_FILE = "bookings.dat";
             }
         }
         return unique;
+    }
+
+    // Добавьте этот метод в класс BookingService:
+    private static String getDataFilePath(String filename) {
+        File dataDir = new File("data");
+        File dataFile = new File(dataDir, filename);
+        if (dataFile.exists() || dataDir.exists()) {
+            return dataFile.getAbsolutePath();
+        }
+        // fallback: текущая директория
+        return filename;
     }
 }

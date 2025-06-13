@@ -12,7 +12,7 @@ import java.util.ArrayList;
 
 @Service
 public class GuestService extends BaseService<Guest> {
-    private static final String GUESTS_FILE = "guests.dat";
+    private static final String GUESTS_FILE = getDataFilePath("guests.dat");
 
     // {
     //     Guest guest1 = new Guest();
@@ -85,4 +85,15 @@ public class GuestService extends BaseService<Guest> {
     //         saveAllToFile(); // Save to file only if explicitly requested
     //     }
     // }
+
+    // Добавьте этот метод в класс GuestService:
+    private static String getDataFilePath(String filename) {
+        File dataDir = new File("data");
+        File dataFile = new File(dataDir, filename);
+        if (dataFile.exists() || dataDir.exists()) {
+            return dataFile.getAbsolutePath();
+        }
+        // fallback: текущая директория
+        return filename;
+    }
 }

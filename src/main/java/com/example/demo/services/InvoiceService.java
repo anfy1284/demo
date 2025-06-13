@@ -8,7 +8,7 @@ import java.util.*;
 
 @Service
 public class InvoiceService {
-    private static final String FILE = "invoices.dat";
+    private static final String FILE = getDataFilePath("invoices.dat");
     private List<Invoice> invoices = new ArrayList<>();
 
     public InvoiceService() {
@@ -74,5 +74,15 @@ public class InvoiceService {
         if (getByNumber(newNumber) != null) return;
         invoice.setNumber(newNumber);
         saveAll();
+    }
+
+    private static String getDataFilePath(String filename) {
+        File dataDir = new File("data");
+        File dataFile = new File(dataDir, filename);
+        if (dataFile.exists() || dataDir.exists()) {
+            return dataFile.getAbsolutePath();
+        }
+        // fallback: текущая директория
+        return filename;
     }
 }

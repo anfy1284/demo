@@ -126,7 +126,8 @@ public class AdminController {
 
     @GetMapping("/download")
     public ResponseEntity<InputStreamResource> downloadFile(@RequestParam String filename) throws IOException {
-        File file = new File(filename);
+        File dataDir = new File("data");
+        File file = dataDir.exists() ? new File(dataDir, filename) : new File(filename);
         if (!file.exists()) {
             return ResponseEntity.notFound().build();
         }
@@ -147,8 +148,8 @@ public class AdminController {
             return "redirect:/admin";
         }
         try {
-            // Используем абсолютный путь относительно рабочей директории приложения
-            File dest = new File(System.getProperty("user.dir"), target);
+            File dataDir = new File("data");
+            File dest = dataDir.exists() ? new File(dataDir, target) : new File(target);
             // Удаляем старый файл, если он есть
             if (dest.exists()) {
                 if (!dest.delete()) {

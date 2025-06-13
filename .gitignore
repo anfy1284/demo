@@ -40,3 +40,6 @@ users.dat
 bookings.dat
 guests.dat
 invoices.dat
+
+# Ignore data directory for persistent .dat files
+data/

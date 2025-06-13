@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Configuration
 public class SecurityConfig {
 
-    private static final String USERS_FILE = "users.dat";
+    private static final String USERS_FILE = getDataFilePath("users.dat");
     private static final ConcurrentHashMap<String, Boolean> mustChangePassword = new ConcurrentHashMap<>();
     private static final Map<String, UserRecord> users = new ConcurrentHashMap<>();
 
@@ -172,5 +172,15 @@ public class SecurityConfig {
         for (UserRecord rec : users.values()) {
             mustChangePassword.put(rec.username, rec.mustChangePassword);
         }
+    }
+
+    private static String getDataFilePath(String filename) {
+        File dataDir = new File("data");
+        File dataFile = new File(dataDir, filename);
+        if (dataFile.exists() || dataDir.exists()) {
+            return dataFile.getAbsolutePath();
+        }
+        // fallback: текущая директория
+        return filename;
     }
 }
