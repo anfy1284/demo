@@ -28,7 +28,7 @@
             margin-bottom: 10px;
         }
         .logo {
-            max-width: 45%;
+            max-width: 460px;
             height: auto;
         }
         .contact-info {
@@ -251,6 +251,7 @@
             <img src="/images/beim_seiler_4c_logo_2021.png" alt="Logo" class="logo">
             <div class="contact-info">
                 Gästehaus Beim Seiler<br>
+                Inh. Malgorzata Fischer<br>
                 Hauptstr. 8 + 10<br>
                 87484 Nesselwang<br>
                 Tel 08361/92527-08<br>
@@ -386,6 +387,7 @@
             Malgorzata Fischer<br>
             Sparkasse Allgäu<br>
             IBAN: DE09 7335 0000 0515 0433 47
+            BIC: BYLADEM1ALG
         </div>
         -->
     </div>
