@@ -427,8 +427,8 @@ public class DataInitializer {
         roomPricingService.addRoomPricing(room4Pricing);
 
         System.out.println("Test data created. Loading bookings from file...");
-        // Вместо: File bookingsFile = new File(new File("/data").exists() ? "/data/bookings.dat" : "bookings.dat");
-        File bookingsFile = new File(new File("data").exists() ? "data/bookings.dat" : "bookings.dat");
+        // Вместо: File bookingsFile = new File(new File("data").exists() ? "data/bookings.dat" : "bookings.dat");
+        File bookingsFile = new File(new File("/data").exists() ? "/data/bookings.dat" : "bookings.dat");
         if (!bookingsFile.exists()) {
             try {
                 bookingsFile.createNewFile(); // Создаём пустой файл, если его нет

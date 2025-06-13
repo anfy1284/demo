@@ -88,7 +88,7 @@ public class GuestService extends BaseService<Guest> {
 
     // Добавьте этот метод в класс GuestService:
     private static String getDataFilePath(String filename) {
-        File dataDir = new File("data");
+        File dataDir = new File("/data");
         File dataFile = new File(dataDir, filename);
         if (dataFile.exists() || dataDir.exists()) {
             return dataFile.getAbsolutePath();

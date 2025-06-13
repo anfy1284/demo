@@ -77,7 +77,7 @@ public class InvoiceService {
     }
 
     private static String getDataFilePath(String filename) {
-        File dataDir = new File("data");
+        File dataDir = new File("/data");
         File dataFile = new File(dataDir, filename);
         if (dataFile.exists() || dataDir.exists()) {
             return dataFile.getAbsolutePath();
