@@ -244,13 +244,21 @@
                     </li>
                 </#list>
             </ul>
-            <!-- Две кнопки печати -->
+            <!-- Две кнопки печати и кнопка смены номера -->
             <button class="print-btn" onclick="printColor()">
                 <span class="material-icons" style="vertical-align:middle;">print</span> Drucken (Farbe)
             </button>
             <button class="print-btn" style="margin-top:10px;" onclick="printBW()">
                 <span class="material-icons" style="vertical-align:middle;">print</span> Drucken (schwarz/weiß)
             </button>
+            <#if !!(readonly?? && readonly)>
+                <form action="/invoice/change-number/${invoice.number}" method="post" style="display:flex;align-items:center;gap:8px;margin-top:10px;">
+                    <input type="text" name="newNumber" value="${invoice.number}" style="width: 110px; font-size: 16px; padding: 4px 8px;" required>
+                    <button type="submit" class="print-btn" style="background:#4caf50;min-width:unset;width:auto;padding:10px 16px;">
+                        <span class="material-icons">edit</span> Nummer ändern
+                    </button>
+                </form>
+            </#if>
         </div>
     <!--
     </div>

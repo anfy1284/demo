@@ -67,4 +67,12 @@ public class InvoiceService {
     public synchronized void reloadAllFromFile() {
         loadAll();
     }
+
+    public synchronized void changeNumber(String oldNumber, String newNumber) {
+        Invoice invoice = getByNumber(oldNumber);
+        if (invoice == null) return;
+        if (getByNumber(newNumber) != null) return;
+        invoice.setNumber(newNumber);
+        saveAll();
+    }
 }

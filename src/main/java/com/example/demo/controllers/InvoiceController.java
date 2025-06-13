@@ -161,4 +161,21 @@ public class InvoiceController {
     public void clearInvoiceSession(HttpSession session) {
         session.removeAttribute("invoiceBookingIds");
     }
+
+    @PostMapping("/invoice/change-number/{number}")
+    public String changeInvoiceNumber(@PathVariable("number") String oldNumber,
+                                      @RequestParam("newNumber") String newNumber,
+                                      Model model) {
+        Invoice invoice = invoiceService.getByNumber(oldNumber);
+        if (invoice == null) {
+            model.addAttribute("error", "Rechnung nicht gefunden.");
+            return "invoices";
+        }
+        if (invoiceService.getByNumber(newNumber) != null) {
+            model.addAttribute("error", "Счет с таким номером уже существует.");
+            return "redirect:/invoice/view/" + oldNumber;
+        }
+        invoiceService.changeNumber(oldNumber, newNumber);
+        return "redirect:/invoice/view/" + newNumber;
+    }
 }
