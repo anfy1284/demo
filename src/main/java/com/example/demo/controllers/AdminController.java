@@ -159,6 +159,19 @@ public class AdminController {
             // Копируем новый файл
             file.transferTo(dest);
             model.addAttribute("message", "Файл успешно загружен: " + dest.getAbsolutePath());
+
+            // После загрузки файла сразу перечитываем все данные
+            if ("users.dat".equals(target)) {
+                SecurityConfig.reloadUsersFromFile();
+                // обновить пользователей в памяти
+                // (если нужно, обновите InMemoryUserDetailsManager аналогично AdminController)
+            } else if ("guests.dat".equals(target)) {
+                guestService.loadAllFromFile();
+            } else if ("bookings.dat".equals(target)) {
+                bookingService.loadAllFromFile();
+            } else if ("invoices.dat".equals(target)) {
+                invoiceService.reloadAllFromFile();
+            }
         } catch (Exception e) {
             model.addAttribute("error", "Ошибка загрузки файла: " + e.getMessage());
         }
