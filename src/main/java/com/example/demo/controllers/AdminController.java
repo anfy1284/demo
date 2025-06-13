@@ -143,10 +143,10 @@ public class AdminController {
     public String uploadFile(@RequestParam("file") MultipartFile file,
                              @RequestParam("target") String target,
                              Model model) {
-        if (file.isEmpty()) {
-            model.addAttribute("error", "Файл не выбран");
-            return "redirect:/admin";
-        }
+        // if (file.isEmpty()) {
+        //     model.addAttribute("error", "Файл не выбран");
+        //     return "redirect:/admin";
+        // }
         try {
             File dataDir = new File("/data");
             File dest = dataDir.exists() ? new File(dataDir, target) : new File(target);
